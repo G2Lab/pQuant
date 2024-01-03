@@ -1,15 +1,6 @@
 #include "test/Test.h"
 
 
-size_t getMemoryUsage() {
-    size_t memory_usage = 0;
-
-    struct rusage r_usage;
-    getrusage(RUSAGE_SELF, &r_usage);
-    memory_usage = static_cast<size_t>(r_usage.ru_maxrss) * 1024; // Convert to bytes
-
-    return memory_usage;
-}
 
 void Test::testReadFastaFiles(const string &ref_filename, const string &read_filename) {
     // Read reference sequences from the file
@@ -149,127 +140,11 @@ void Test::previousAlgorithm() {
     std::cout << "Decrypt time: " << processingTime << "ms" << std::endl;
 }
 
-void Test::bfvBasicAlgorithmBenchmarks() {
-    TimeVar t;
-    double processingTime(0.0);
-    
-    size_t memory_usage = getMemoryUsage();
-
-    // Print memory usage in a human-readable format
-    double memory_usage_gb = static_cast<double>(memory_usage) / (1024.0 * 1024.0 * 1024.0); // Convert to GB
-
-    std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
-
-    CCParams<CryptoContextBFVRNS> parameters;
-    parameters.SetSecurityLevel(HEStd_128_classic);
-    parameters.SetPlaintextModulus(65537);
-    parameters.SetMultiplicativeDepth(2);
-    parameters.SetMaxRelinSkDeg(2);
-    parameters.SetScalingModSize(20);
-
-    CryptoContext<DCRTPoly> cryptoContext = GenCryptoContext(parameters);
-    // enable features that you wish to use
-    cryptoContext->Enable(PKE);
-    cryptoContext->Enable(KEYSWITCH);
-    cryptoContext->Enable(LEVELEDSHE);
-    cryptoContext->Enable(ADVANCEDSHE);
-
-    
-    std::cout << "\np = " << cryptoContext->GetCryptoParameters()->GetPlaintextModulus() << std::endl;
-    std::cout << "n = " << cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2
-              << std::endl;
-    std::cout << "log2 q = "
-              << log2(cryptoContext->GetCryptoParameters()->GetElementParams()->GetModulus().ConvertToDouble())
-              << std::endl;
-
-    // Initialize Public Key Containers
-    KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
-    cryptoContext->EvalMultKeysGen(keyPair.secretKey);
-    Plaintext_3d ref_plain;
-    Plaintext_4d read_plain;
-    long slot_count = cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
-    long log_poly_modulus_size = (long)log2(slot_count);
-    cout << "log_slot_count = " << log_poly_modulus_size << endl;
-    vector<int32_t> rotList(log_poly_modulus_size);
-    
-
-    // benchmark each operations
-    
-    // generate random plaintexts
-    vector<int64_t> plain_vec(slot_count, 0);
-    for (int i = 0; i < slot_count; i++) {
-        plain_vec[i] = rand() % 2;
-    }
-
-    // encode
-    Plaintext plain;
-    TIC(t);
-    for (int i = 0; i < 1000; i++) {
-        plain = cryptoContext->MakeCoefPackedPlaintext(plain_vec);
-    }
-    processingTime = TOC(t);
-    std::cout << "encode time: " << processingTime / 1000 << "ms" << std::endl;
-
-    //encrypt
-    Ciphertext<DCRTPoly> ciphertext, ciphertextMult;
-    TIC(t);
-    for (int i = 0; i < 1000; i++) {
-        ciphertext = cryptoContext->Encrypt(keyPair.secretKey, plain);
-        ciphertextMult = cryptoContext->Encrypt(keyPair.secretKey, plain);
-    }
-    processingTime = TOC(t);
-    std::cout << "Encrypt time: " << processingTime / 1000 << "ms" << std::endl;
-
-    // decrypt
-    Plaintext plain2;
-    TIC(t);
-    for (int i = 0; i < 1000; i++) {
-        cryptoContext->Decrypt(keyPair.secretKey, ciphertext, &plain2);
-    }
-    processingTime = TOC(t);
-    std::cout << "Decrypt time: " << processingTime / 1000 << "ms" << std::endl;
-
-    // mult ctxt * plain
-    Ciphertext<DCRTPoly> ciphertext2;
-    TIC(t);
-    for (int i = 0; i < 1000; i++) {
-        ciphertext2 = cryptoContext->EvalMult(ciphertext, plain);
-    }
-    processingTime = TOC(t);
-    std::cout << "Mult ctxt * plain time: " << processingTime / 1000 << "ms" << std::endl;
-
-    // mult ctxt * ctxt
-    TIC(t);
-    for (int i = 0; i < 1000; i++) {
-        ciphertext2 = cryptoContext->EvalMult(ciphertext, ciphertextMult);
-    }
-    processingTime = TOC(t);
-    std::cout << "Mult ctxt * ctxt time: " << processingTime / 1000 << "ms" << std::endl;
-    // add
-    Ciphertext<DCRTPoly> ciphertext3, ciphertextAdd;
-    ciphertextAdd = cryptoContext->Encrypt(keyPair.secretKey, plain);
-    TIC(t);
-    for (int i = 0; i < 1000; i++) {
-        ciphertext3 = cryptoContext->EvalAdd(ciphertext, ciphertextAdd);
-    }
-    processingTime = TOC(t);
-    std::cout << "Add time: " << processingTime / 1000 << "ms" << std::endl;
-
-    memory_usage = getMemoryUsage();
-
-    // Print memory usage in a human-readable format
-    memory_usage_gb = static_cast<double>(memory_usage) / (1024.0 * 1024.0 * 1024.0); // Convert to GB
-
-    std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
-    
-}
-
-
 void Test::kmerTables() {
     // string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
     // string filename_read = "../dataset/five_genes/five_gene_reads.fa";
-    string filename_ref = "../dataset/refs_toy.fa";
-    string filename_read = "../dataset/reads_toy.fa";
+    string filename_ref = "../dataset/test/refs_toy.fa";
+    string filename_read = "../dataset/test/reads_toy.fa";
 
     vector<Sequence> refs_seq;
     vector<Sequence> reads_seq;
@@ -309,8 +184,8 @@ void Test::kmerTables() {
 }
 
 void Test::plainExp() {
-    string filename_read = "../dataset/reads_toy.fa";
-    string filename_ref = "../dataset/refs_toy.fa";
+    string filename_read = "../dataset/test/reads_toy.fa";
+    string filename_ref = "../dataset/test/refs_toy.fa";
     long K = 8;
     long B = 4;
 

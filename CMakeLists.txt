@@ -17,7 +17,8 @@ cmake_minimum_required (VERSION 3.5.1)
 ### If you need your application to be linked statically, then run "cmake .. -DBUILD_STATIC=ON"
 
 project(demo CXX)
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
 option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 
 find_package(OpenFHE CONFIG REQUIRED)
@@ -42,6 +43,8 @@ include_directories( ${OpenFHE_INCLUDE}/pke )
 include_directories( ${OpenFHE_INCLUDE}/binfhe )
 ### add directories for other OpenFHE modules as needed for your project
 
+include_directories(${googletest_SOURCE_DIR}/googletest/include)
+
 link_directories( ${OpenFHE_LIBDIR} )
 link_directories( ${OPENMP_LIBRARIES} )
 if(BUILD_STATIC)
@@ -52,14 +55,57 @@ else()
     link_libraries( ${OpenFHE_SHARED_LIBRARIES} )
 endif()
 
-### ADD YOUR EXECUTABLE(s) HERE
-### add_executable( EXECUTABLE-NAME SOURCES )
-###
-### EXAMPLE:
+include(FetchContent)
+FetchContent_Declare(
+    googletest
+    GIT_REPOSITORY https://github.com/google/googletest.git
+    GIT_TAG        release-1.11.0
+)
+FetchContent_MakeAvailable(googletest)
 
 include_directories(include)
 include_directories(include/entropy)
 include_directories(include/enc)
 include_directories(include/test)
+
+
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
-add_executable(pquant ${SRC_FILES})
+list(FILTER SRC_FILES EXCLUDE REGEX "src/main.cpp")
+file(GLOB_RECURSE TEST_FILES test/*.cpp)
+
+add_executable(pquant src/main.cpp ${SRC_FILES})
+
+add_executable(test_all ${TEST_FILES} ${SRC_FILES})
+target_link_libraries(test_all gtest gtest_main)
+
+set(benchmark_ROOT_DIR "" CACHE PATH "Folder containing benchmark")
+
+find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h"
+  PATHS ${benchmark_ROOT_DIR}
+  PATH_SUFFIXES include
+  NO_DEFAULT_PATH)
+find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h")
+
+find_library(benchmark_LIBRARY NAMES "benchmark"
+  PATHS ${benchmark_ROOT_DIR}
+  PATH_SUFFIXES lib lib64
+  NO_DEFAULT_PATH)
+find_library(benchmark_LIBRARY NAMES "benchmark")
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set benchmark_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(benchmark FOUND_VAR benchmark_FOUND
+  REQUIRED_VARS benchmark_LIBRARY
+  benchmark_INCLUDE_DIR)
+
+if(benchmark_FOUND)
+  set(benchmark_LIBRARIES ${benchmark_LIBRARY})
+  set(benchmark_INCLUDE_DIRS ${benchmark_INCLUDE_DIR})
+endif()
+
+mark_as_advanced(benchmark_INCLUDE_DIR benchmark_LIBRARY)
+
+add_executable(benchmark benchmark.cpp ${SRC_FILES})
+include_directories(${benchmark_INCLUDE_DIR})
+target_link_libraries(benchmark ${benchmark_LIBRARY})

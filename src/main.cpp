@@ -29,8 +29,6 @@ int main(int argc, char **argv) {
             Test::testReadFastaFiles(filename_ref,filename_read);
         } else if (strcmp(argv[2], "bfv") == 0) {
             Test::previousAlgorithm();
-        } else if (strcmp(argv[2], "bfvbench") == 0) {
-            Test::bfvBasicAlgorithmBenchmarks();
         } else if (strcmp(argv[2], "kmer") == 0) {
             Test::kmerTables();
         } else if (strcmp(argv[2], "plain") == 0) {
