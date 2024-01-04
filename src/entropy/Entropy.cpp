@@ -75,7 +75,7 @@ void computeKmerTableForRead(vector<Sequence>& read, long K, KmerTable &kmerTabl
     // count kmers in gene
     for (int i = 0; i < read.size(); i++) {
         cout << "check progress" << endl;
-        cout << "i = " << i << " / " << read.size() << endl;
+        cout << "i = " << i + 1 << " / " << read.size() << endl;
         for (int j = 0; j < read[i].getNumSeq(); j++) {
             string seq = read[i].getSeq(j);
             if (seq.size() < K) {

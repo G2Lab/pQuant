@@ -1,5 +1,30 @@
 #include "enc/Functions.h"
 
+void printKmerTable(KmerTable &kmerTable, bool isRef) {
+    if (isRef){
+        cout << " KmerTable for reference" << endl;
+        cout << "geneNameIndex.size() = " << kmerTable.geneNameIndex.size() << endl;
+        cout << "count.size() = " << kmerTable.count.size() << endl;
+        cout << "entropy.size() = " << kmerTable.entropy.size() << endl;
+
+        for (auto &p : kmerTable.count) {
+            cout << "kmer = " << p.first << " => count : ";
+            for (int i = 0; i < p.second.size(); i++) {
+                cout << p.second[i] << " ";
+            }
+            // print entropy
+            cout << " => entropy = " << kmerTable.entropy[p.first];
+            cout << endl;
+        }
+    } else {
+        cout << " KmerTable for read" << endl;
+        cout << "countRead.size() = " << kmerTable.countRead.size() << endl;
+        for (auto &p : kmerTable.countRead) {
+            cout << "kmer = " << p.first << " => count = " << p.second << endl;
+        }
+    }
+}
+
 void encryptReadKmer(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPoly>> &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair, bool progress_bar) {
     // encrypt kmerTableRead.countRead into vector of ciphertexts (ct)
     // first, plain vector is created by vec[kmer(num)] = kmerTableRead.countRead[i]
@@ -30,7 +55,17 @@ void encryptReadKmer(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPol
 
         // update progress bar
         print_progress_bar(i, n_plain_vecs, start_time);
+    }
 }
 
-void multAll(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPoly>> &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair) {
+void multCtxtByRef(vector<Ciphertext<DCRTPoly>> &ct_out, vector<Ciphertext<DCRTPoly>> &ct, Plaintext_1d &pt, CryptoContext<DCRTPoly> &cc) {
+    assert(ct.size() == pt.size());
+    // multiply ciphertexts in ct with plaintexts in pt
+    // result is stored in ct_out
+    // ct_out[i] = ct[i] * pt[i]
+
+    ct_out.resize(ct.size());
+    for (int i = 0; i < ct.size(); i++) {
+        ct_out[i] = cc->EvalMult(ct[i], pt[i]);
+    }
 }

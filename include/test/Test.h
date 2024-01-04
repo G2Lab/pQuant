@@ -7,6 +7,7 @@
 #include "Functions.h"
 #include "entropy/Entropy.h"
 #include "enc/Functions.h"
+#include "PQuantParams.h"
 #include "openfhe.h"
 
 
@@ -21,11 +22,11 @@ public:
 
     static void bfvBasicAlgorithmBenchmarks();
 
-    static void kmerTables();
+    static void kmerTables(PQuantParams &param);
 
     static void plainExp();
 
-    static void encryptRead();
+    static void encryptRead(PQuantParams &param);
 };
 
 #endif

@@ -140,20 +140,22 @@ void Test::previousAlgorithm() {
     std::cout << "Decrypt time: " << processingTime << "ms" << std::endl;
 }
 
-void Test::kmerTables() {
+void Test::kmerTables(PQuantParams &param) {
     // string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
     // string filename_read = "../dataset/five_genes/five_gene_reads.fa";
-    string filename_ref = "../dataset/test/refs_toy.fa";
-    string filename_read = "../dataset/test/reads_toy.fa";
+    // string filename_ref = "../dataset/test/refs_toy.fa";
+    // string filename_read = "../dataset/test/reads_toy.fa";
 
+    string filename_ref = param.filename_ref;
+    string filename_read = param.filename_read;
+    long K = param.k;
+    
     vector<Sequence> refs_seq;
     vector<Sequence> reads_seq;
     readFastaFile(filename_ref, refs_seq);
     readFastaFile(filename_read, reads_seq);
 
-
     KmerTable kmerTableRef, kmerTableRead;
-    long K = 7;
     computeKmerTable(refs_seq, K, kmerTableRef);
     computeKmerTableForRead(reads_seq, K, kmerTableRead);
 
@@ -166,21 +168,23 @@ void Test::kmerTables() {
     cout << "entropy.size() = " << kmerTableRead.entropy.size() << endl;
 
     cout << "=== kmerTableRef ===" << endl;
-    for (auto &p : kmerTableRef.count) {
-        cout << "kmer = " << p.first << " => count = ";
-        for (int i = 0; i < p.second.size(); i++) {
-            cout << p.second[i] << " ";
-        }
-        cout << endl;
-    }
-    for (auto &p : kmerTableRef.entropy) {
-        cout << "kmer = " << p.first << " => entropy = " << p.second << endl;
-    }
+    printKmerTable(kmerTableRef, true);
+    // for (auto &p : kmerTableRef.count) {
+    //     cout << "kmer = " << p.first << " => count = ";
+    //     for (int i = 0; i < p.second.size(); i++) {
+    //         cout << p.second[i] << " ";
+    //     }
+    //     cout << endl;
+    // }
+    // for (auto &p : kmerTableRef.entropy) {
+    //     cout << "kmer = " << p.first << " => entropy = " << p.second << endl;
+    // }
 
     cout << "=== kmerTableRead ===" << endl;
-    for (auto &p : kmerTableRead.countRead) {
-        cout << "kmer = " << p.first << " => count = " << p.second << endl;
-    }
+    printKmerTable(kmerTableRead, false);
+    // for (auto &p : kmerTableRead.countRead) {
+    //     cout << "kmer = " << p.first << " => count = " << p.second << endl;
+    // }
 }
 
 void Test::plainExp() {
@@ -260,12 +264,12 @@ void Test::plainExp() {
     }
 }
 
-void Test::encryptRead() {
+void Test::encryptRead(PQuantParams &param) {
     TimeVar t;
     double processingTime(0.0);
-    string filename_read = "../dataset/five_genes/five_gene_reads_shorten.fa";
-    // string filename_read = "../dataset/reads_toy.fa";
-    long K = 15;
+    // string filename_read = "../dataset/five_genes/five_gene_reads_shorten.fa";
+    string filename_read = param.filename_read;
+    long K = param.k;
 
     cout << "read filename = " << filename_read << endl;
     cout << "K = " << K << endl;
@@ -273,10 +277,6 @@ void Test::encryptRead() {
     // Read read sequences from the file
     vector<Sequence> reads_seq;
     readFastaFile(filename_read, reads_seq);
-
-    // benchmarking variables
-    // TimeVar t;
-    // double processingTime(0.0);
 
     CCParams<CryptoContextBFVRNS> parameters;
     parameters.SetPlaintextModulus(65537);
@@ -304,11 +304,14 @@ void Test::encryptRead() {
 
     KmerTable kmerTableRead;
     computeKmerTableForRead(reads_seq, K, kmerTableRead);
-
+    cout << "coumpueKmerTableForRead done" << endl;
 
     vector<Ciphertext<DCRTPoly>> ct;
     TIC(t);
     encryptReadKmer(kmerTableRead, K, ct, cryptoContext, keyPair);
     processingTime = TOC(t);
+    
+    std::cout << std::endl;
+    std::cout << "total num of ctxts: " << ct.size() << std::endl;
     std::cout << "Encrypt Reads time: " << processingTime << "ms" << std::endl;
 }

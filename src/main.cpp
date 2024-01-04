@@ -1,44 +1,65 @@
 #include "Functions.h"
-#include "Sequence.h"
 #include "PlainFunc.h"
+#include "Sequence.h"
+#include "cxxopts.hpp"
+#include "entropy/Entropy.h"
+#include "openfhe.h"
+#include "test/Test.h"
+#include "PQuantParams.h"
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
-#include "entropy/Entropy.h"
-#include "openfhe.h"
-#include "test/Test.h"
-
 
 using namespace std;
 using namespace lbcrypto;
 
-
 int main(int argc, char **argv) {
-    if (argc < 2) {
-        cout << "No arguments found" << endl;
-        return 0;
+    cxxopts::Options options("pQuant_enc", "BFV implementation of secure pQuant algorithm");
+
+    options.add_options()
+        ("t,target", "target algorithm", cxxopts::value<std::string>()->default_value("test"))
+        ("d,data", "dataset", cxxopts::value<std::string>()->default_value("toy"))
+        ("k,kmer", "Param kmer", cxxopts::value<int>()->default_value("15"))
+        ("v,verbose", "enable verbose", cxxopts::value<bool>()->default_value("false"))
+        ("b,bar", "print progress bar", cxxopts::value<bool>()->default_value("false"))
+        ("h,help", "Print usage")
+    ;
+
+
+    auto result = options.parse(argc, argv);
+
+    if (result.count("help"))
+    {
+      std::cout << options.help() << std::endl;
+      exit(0);
     }
-    // string filename_read = "../dataset/big/reads_GM12878_20_genes.fa";
-    // string filename_ref = "../dataset/big/exon_reference.fa";
-    // string filename_read = "../dataset/five_genes/five_gene_reads_shorten.fa";
-    if (strcmp(argv[1], "test") == 0) {
-        if (strcmp(argv[2], "fasta") == 0) {
-            string filename_read = "../dataset/five_genes/five_gene_reads.fa";
-            string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
-            Test::testReadFastaFiles(filename_ref,filename_read);
-        } else if (strcmp(argv[2], "bfv") == 0) {
-            Test::previousAlgorithm();
-        } else if (strcmp(argv[2], "kmer") == 0) {
-            Test::kmerTables();
-        } else if (strcmp(argv[2], "plain") == 0) {
-            Test::plainExp();
-        } else if (strcmp(argv[2], "encread") == 0) {
-            Test::encryptRead();
-        }
-    } else {
-        // printout error: no matching arguments found
-        cout << "No matching arguments found" << endl;
+
+    string filename_read = datasetMap[result["data"].as<std::string>()].first;
+    string filename_ref = datasetMap[result["data"].as<std::string>()].second;
+
+    int k = result["kmer"].as<int>();
+    string target = result["target"].as<std::string>();
+    bool progress_bar = result["bar"].as<bool>();
+    bool verbose = result["verbose"].as<bool>();
+
+    PQuantParams param(target, filename_read, filename_ref, k, verbose, progress_bar);
+
+    param.print();
+
+
+    if (target.compare("fasta") == 0) {
+        // filename_read = "../dataset/five_genes/five_gene_reads.fa";
+        // string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
+        Test::testReadFastaFiles(filename_ref, filename_read);
+    } else if (target.compare("bfv") == 0) {
+        Test::previousAlgorithm();
+    } else if (target.compare("kmer") == 0) {
+        Test::kmerTables(param);
+    } else if (target.compare("plain") == 0) {
+        Test::plainExp();
+    } else if (target.compare("encread") == 0) {
+        Test::encryptRead(param);
     }
     return 0;
 }

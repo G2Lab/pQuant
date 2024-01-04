@@ -16,8 +16,12 @@
 using namespace std;
 using namespace lbcrypto;
 
+void printKmerTable(KmerTable &kmerTable, bool isRef);
+
 void encryptReadKmer(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPoly>> &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair, bool=true);
 
 void multAll(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPoly>> &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair);
+
+void multCtxtByRef(vector<Ciphertext<DCRTPoly>> &ct_out, vector<Ciphertext<DCRTPoly>> &ct, Plaintext_1d &pt, CryptoContext<DCRTPoly> &cc);
 
 #endif
