@@ -56,16 +56,58 @@ void encryptReadKmer(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPol
         // update progress bar
         print_progress_bar(i, n_plain_vecs, start_time);
     }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time-start_time).count();
+    cout << "encryptReadKmer duration = " << duration << " s" << endl;
 }
 
-void multCtxtByRef(vector<Ciphertext<DCRTPoly>> &ct_out, vector<Ciphertext<DCRTPoly>> &ct, Plaintext_1d &pt, CryptoContext<DCRTPoly> &cc) {
-    assert(ct.size() == pt.size());
+void encodeRefKmer(KmerTable &kmerTableRef, long K, vector<Plaintext> &pt_ref, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair, bool progress_bar) {
+    // encode KmerTableRef into vector of plaintexts (pt_ref)
+    // first, plain vector is created by vec[kmer(num)] += kmerTableRef.count[i] for all # of genes
+    // then, plain vector is encoded to plaintext
+
+    // create plain vector
+    long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
+    long n_plain_vecs = pow(4, K) / n_slots;
+    if (n_plain_vecs == 0)
+        n_plain_vecs = 1;
+    vector<vector<int64_t>> plain_vec(n_plain_vecs, vector<int64_t>(n_slots, 0));
+
+    cout << "n_slots = " << n_slots << endl;
+    cout << "n_plain_vecs = " << n_plain_vecs << endl;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    for (auto &p : kmerTableRef.count) {
+        long num_vec = p.first / n_slots;
+        long num_slot = p.first % n_slots;
+        for (int i = 0; i < p.second.size(); i++) {
+            plain_vec[num_vec][num_slot] += p.second[i];
+        }
+    }
+
+    for (int i = 0; i < n_plain_vecs; i++) {
+        Plaintext plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+        pt_ref.push_back(plain);
+
+        // update progress bar
+        print_progress_bar(i, n_plain_vecs, start_time);
+    }
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time-start_time).count();
+    cout << "encodeRefKmer duration = " << duration << " s" << endl;
+}
+
+void multCtxtByRef(vector<Ciphertext<DCRTPoly>> &ct_out, vector<Ciphertext<DCRTPoly>> &ct, vector<Plaintext> &pt_ref, CryptoContext<DCRTPoly> &cc) {
+    assert(ct.size() == pt_ref.size());
     // multiply ciphertexts in ct with plaintexts in pt
     // result is stored in ct_out
     // ct_out[i] = ct[i] * pt[i]
 
     ct_out.resize(ct.size());
     for (int i = 0; i < ct.size(); i++) {
-        ct_out[i] = cc->EvalMult(ct[i], pt[i]);
+        ct_out[i] = cc->EvalMult(ct[i], pt_ref[i]);
     }
 }

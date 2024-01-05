@@ -265,18 +265,10 @@ void Test::plainExp() {
 }
 
 void Test::encryptRead(PQuantParams &param) {
-    TimeVar t;
-    double processingTime(0.0);
-    // string filename_read = "../dataset/five_genes/five_gene_reads_shorten.fa";
-    string filename_read = param.filename_read;
-    long K = param.k;
-
-    cout << "read filename = " << filename_read << endl;
-    cout << "K = " << K << endl;
-
     // Read read sequences from the file
-    vector<Sequence> reads_seq;
-    readFastaFile(filename_read, reads_seq);
+    vector<Sequence> reads_seq, refs_seq;
+    readFastaFile(param.filename_read, reads_seq);
+    readFastaFile(param.filename_ref, refs_seq);
 
     CCParams<CryptoContextBFVRNS> parameters;
     parameters.SetPlaintextModulus(65537);
@@ -302,16 +294,22 @@ void Test::encryptRead(PQuantParams &param) {
     cryptoContext->EvalMultKeysGen(keyPair.secretKey);
 
 
-    KmerTable kmerTableRead;
-    computeKmerTableForRead(reads_seq, K, kmerTableRead);
-    cout << "coumpueKmerTableForRead done" << endl;
+    KmerTable kmerTableRef, kmerTableRead;
+    computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
+    computeKmerTable(refs_seq, param.k, kmerTableRef);
+
+    vector<Plaintext> pt_ref;
+    encodeRefKmer(kmerTableRef, param.k, pt_ref, cryptoContext, keyPair, true);
+    cout << "pt_ref.size() = " << pt_ref.size() << endl;
 
     vector<Ciphertext<DCRTPoly>> ct;
-    TIC(t);
-    encryptReadKmer(kmerTableRead, K, ct, cryptoContext, keyPair);
-    processingTime = TOC(t);
+    encryptReadKmer(kmerTableRead, param.k, ct, cryptoContext, keyPair);
+    cout << "ct.size() = " << ct.size() << endl;
+
+    vector<Ciphertext<DCRTPoly>> ct_out;
+    multCtxtByRef(ct_out, ct, pt_ref, cryptoContext);
+    cout << "ct_out.size() = " << ct_out.size() << endl;
+
     
-    std::cout << std::endl;
-    std::cout << "total num of ctxts: " << ct.size() << std::endl;
-    std::cout << "Encrypt Reads time: " << processingTime << "ms" << std::endl;
+
 }

@@ -20,8 +20,8 @@ void printKmerTable(KmerTable &kmerTable, bool isRef);
 
 void encryptReadKmer(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPoly>> &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair, bool=true);
 
-void multAll(KmerTable &kmerTableRead, long K, vector<Ciphertext<DCRTPoly>> &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair);
+void encodeRefKmer(KmerTable &kmerTableRef, long K, vector<Plaintext> &pt_ref, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair, bool progress_bar);
 
-void multCtxtByRef(vector<Ciphertext<DCRTPoly>> &ct_out, vector<Ciphertext<DCRTPoly>> &ct, Plaintext_1d &pt, CryptoContext<DCRTPoly> &cc);
+void multCtxtByRef(vector<Ciphertext<DCRTPoly>> &ct_out, vector<Ciphertext<DCRTPoly>> &ct, vector<Plaintext> &pt_ref, CryptoContext<DCRTPoly> &cc);
 
 #endif

@@ -49,8 +49,8 @@ void print_progress_bar(int iter, int total, std::chrono::time_point<std::chrono
         std::cout << "] " << std::setw(3) << int(progress * 100.0) << "% ";
 
         // Print time information
-        std::cout << "| Elapsed Time: " << ElapsedTime(std::chrono::seconds(elapsed_time)) << "m ";
-        std::cout << "| ETA: " << ElapsedTime(std::chrono::seconds(static_cast<long long>(estimated_time_remaining))) << "m ";
+        std::cout << "| Elapsed Time: " << ElapsedTime(std::chrono::seconds(elapsed_time)) << "s ";
+        std::cout << "| ETA: " << ElapsedTime(std::chrono::seconds(static_cast<long long>(estimated_time_remaining))) << "s ";
 
         std::cout.flush();
     }
