@@ -46,7 +46,9 @@ void print_progress_bar(int iter, int total, std::chrono::time_point<std::chrono
             else
                 std::cout << " ";
         }
-        std::cout << "] " << std::setw(3) << int(progress * 100.0) << "% ";
+        std::cout << "] ";
+        std::cout << " (" << iter + 1 << "/" << total << ") ";
+        std::cout << std::setw(3) << int(progress * 100.0) << "% ";
 
         // Print time information
         std::cout << "| Elapsed Time: " << ElapsedTime(std::chrono::seconds(elapsed_time)) << "s ";

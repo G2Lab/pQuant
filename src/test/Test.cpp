@@ -1,7 +1,5 @@
 #include "test/Test.h"
 
-
-
 void Test::testReadFastaFiles(const string &ref_filename, const string &read_filename) {
     // Read reference sequences from the file
     vector<Sequence> refs_seq;
@@ -29,8 +27,10 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
             // cout << "  -  " << ref_seq.getSeq(i) << endl;
             total_n_ref += 1;
             long len = ref_seq.getSeq(i).size();
-            if (len_max < len) len_max = len;
-            if (len_min > len) len_min = len;
+            if (len_max < len)
+                len_max = len;
+            if (len_min > len)
+                len_min = len;
             avg += len;
         }
     }
@@ -55,7 +55,6 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
     cout << "min = " << len_min << endl;
     cout << "avg = " << avg / total_n_ref << endl;
 }
-
 
 void Test::previousAlgorithm() {
     TimeVar t;
@@ -149,7 +148,7 @@ void Test::kmerTables(PQuantParams &param) {
     string filename_ref = param.filename_ref;
     string filename_read = param.filename_read;
     long K = param.k;
-    
+
     vector<Sequence> refs_seq;
     vector<Sequence> reads_seq;
     readFastaFile(filename_ref, refs_seq);
@@ -293,23 +292,70 @@ void Test::encryptRead(PQuantParams &param) {
     KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeysGen(keyPair.secretKey);
 
-
     KmerTable kmerTableRef, kmerTableRead;
     computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
     computeKmerTable(refs_seq, param.k, kmerTableRef);
 
-    vector<Plaintext> pt_ref;
+    // printKmerTable(kmerTableRef, true);
+    // printKmerTable(kmerTableRead, false);
+
+
+    cout << " === run encodeRefKmer === " << endl;
+    Plaintext_2d pt_ref;
     encodeRefKmer(kmerTableRef, param.k, pt_ref, cryptoContext, keyPair, true);
+    cout << endl;
     cout << "pt_ref.size() = " << pt_ref.size() << endl;
+    for (auto &p : pt_ref) {
+        cout << "p.size() = " << p.size() << endl;
+    }
+    cout << endl;
 
-    vector<Ciphertext<DCRTPoly>> ct;
+    cout << " === run encryptReadKmer === " << endl;
+    Ciphertext_1d ct;
     encryptReadKmer(kmerTableRead, param.k, ct, cryptoContext, keyPair);
+    cout << endl;
     cout << "ct.size() = " << ct.size() << endl;
+    cout << endl;
 
-    vector<Ciphertext<DCRTPoly>> ct_out;
+    auto start_time = std::chrono::high_resolution_clock::now();
+
+    cout << " === run multCtxtByRef === " << endl;
+    Ciphertext_2d ct_out;
     multCtxtByRef(ct_out, ct, pt_ref, cryptoContext);
+    cout << endl;
     cout << "ct_out.size() = " << ct_out.size() << endl;
+    cout << endl;
 
-    
+    cout << " === run sumUpCtxt === " << endl;
+    Ciphertext_1d ct_sum(ct_out.size());
+    for (int i = 0; i < ct_out.size(); i++) {
+        sumUpCtxt(ct_sum[i], ct_out[i], cryptoContext);
+    }
+    cout << endl;
+    cout << endl;
 
+    cout << " === run decrypt_output === " << endl;
+    Plaintext_1d pt_sum(ct_sum.size());
+    for (int i = 0; i < ct_sum.size(); i++) {
+        cryptoContext->Decrypt(keyPair.secretKey, ct_sum[i], &pt_sum[i]);
+    }
+    cout << endl;
+    cout << "decrypt done" << endl;
+    cout << endl;
+    for (int i = 0; i < pt_sum.size(); i++) {
+        auto plain = pt_sum[i]->GetCoefPackedValue();
+        cout << plain[0] << endl;
+        // cout << plain[0] << endl;
+        // cout << "pt_sum[" << i << "] = " << plain[0] << endl;
+        // cout << plain << endl;
+    }
+    cout << endl;
+
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    cout << "total duration = " << duration << " s" << endl;
+
+    // vector<Plaintext> pt_out;
+    // decCtxtOut(pt_out, ct_out, cryptoContext, keyPair);
+    // cout << "pt_out.size() = " << pt_out.size() << endl;
 }
