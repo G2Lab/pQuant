@@ -25,6 +25,8 @@ void encodeRefKmer(KmerTable &kmerTableRef, long K, Plaintext_2d &pt_ref, Crypto
 
 void multCtxtByRef(Ciphertext_2d &ct_out, Ciphertext_1d &ct, Plaintext_2d &pt_ref, CryptoContext<DCRTPoly> &cc);
 
+void multCtxtByKmerTableRef(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, long K, CryptoContext<DCRTPoly> &cc);
+
 void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair);
 
 void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DCRTPoly> &cc);

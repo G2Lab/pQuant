@@ -2,6 +2,7 @@
 #define util_h_
 
 #include <sys/wait.h>
+#include <sys/resource.h>
 #include <unistd.h>
 
 #include <chrono>
@@ -29,7 +30,7 @@ inline void print_vector(std::vector<T> vec, std::size_t print_size, int prec);
 template <typename T>
 void print_matrix(std::vector<T> matrix, std::size_t row_size);
 
-void print_progress_bar(int progress, int total, std::chrono::time_point<std::chrono::high_resolution_clock> start_time, int=70, bool=true);
+void print_progress_bar(std::string instruction, int iter, int total, std::chrono::time_point<std::chrono::high_resolution_clock> start_time, int=70, bool=true);
 
 std::string ElapsedTime(std::chrono::seconds secs);
 

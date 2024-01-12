@@ -30,6 +30,12 @@
 *.exe
 *.out
 *.app
+*.err
+*.json
 
 build/*
 *.fa
+
+openfhe/*
+dataset/*
+*.sh

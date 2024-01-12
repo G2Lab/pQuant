@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.5.1)
+cmake_minimum_required (VERSION 3.11.1)
 
 ### To use gcc/g++ on a Macintosh, you must set the Compilers
 ### here, not inside the project
@@ -17,8 +17,7 @@ cmake_minimum_required (VERSION 3.5.1)
 ### If you need your application to be linked statically, then run "cmake .. -DBUILD_STATIC=ON"
 
 project(demo CXX)
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++20")
+set(CMAKE_CXX_STANDARD 17)
 option( BUILD_STATIC "Set to ON to include static versions of the library" OFF)
 
 find_package(OpenFHE CONFIG REQUIRED)
@@ -63,6 +62,20 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
+# Fetch and populate Google Benchmark
+FetchContent_Declare(
+    googlebenchmark
+    GIT_REPOSITORY https://github.com/google/benchmark.git
+    GIT_TAG v1.5.4
+)
+FetchContent_Populate(googlebenchmark)
+
+add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR})
+
+include_directories(${googletest_SOURCE_DIR}/googletest/include)
+include_directories(${googletest_SOURCE_DIR}/googlemock/include)
+include_directories(${googlebenchmark_SOURCE_DIR}/include)
+
 include_directories(include)
 include_directories(include/entropy)
 include_directories(include/enc)
@@ -78,34 +91,34 @@ add_executable(pquant src/main.cpp ${SRC_FILES})
 add_executable(test_all ${TEST_FILES} ${SRC_FILES})
 target_link_libraries(test_all gtest gtest_main)
 
-set(benchmark_ROOT_DIR "" CACHE PATH "Folder containing benchmark")
+# set(benchmark_ROOT_DIR "" CACHE PATH "Folder containing benchmark")
 
-find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h"
-  PATHS ${benchmark_ROOT_DIR}
-  PATH_SUFFIXES include
-  NO_DEFAULT_PATH)
-find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h")
+# find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h"
+#   PATHS ${benchmark_ROOT_DIR}
+#   PATH_SUFFIXES include
+#   NO_DEFAULT_PATH)
+# find_path(benchmark_INCLUDE_DIR "benchmark/benchmark.h")
 
-find_library(benchmark_LIBRARY NAMES "benchmark"
-  PATHS ${benchmark_ROOT_DIR}
-  PATH_SUFFIXES lib lib64
-  NO_DEFAULT_PATH)
-find_library(benchmark_LIBRARY NAMES "benchmark")
+# find_library(benchmark_LIBRARY NAMES "benchmark"
+#   PATHS ${benchmark_ROOT_DIR}
+#   PATH_SUFFIXES lib lib64
+#   NO_DEFAULT_PATH)
+# find_library(benchmark_LIBRARY NAMES "benchmark")
 
-include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set benchmark_FOUND to TRUE
-# if all listed variables are TRUE
-find_package_handle_standard_args(benchmark FOUND_VAR benchmark_FOUND
-  REQUIRED_VARS benchmark_LIBRARY
-  benchmark_INCLUDE_DIR)
+# include(FindPackageHandleStandardArgs)
+# # handle the QUIETLY and REQUIRED arguments and set benchmark_FOUND to TRUE
+# # if all listed variables are TRUE
+# find_package_handle_standard_args(benchmark FOUND_VAR benchmark_FOUND
+#   REQUIRED_VARS benchmark_LIBRARY
+#   benchmark_INCLUDE_DIR)
 
-if(benchmark_FOUND)
-  set(benchmark_LIBRARIES ${benchmark_LIBRARY})
-  set(benchmark_INCLUDE_DIRS ${benchmark_INCLUDE_DIR})
-endif()
+# if(benchmark_FOUND)
+#   set(benchmark_LIBRARIES ${benchmark_LIBRARY})
+#   set(benchmark_INCLUDE_DIRS ${benchmark_INCLUDE_DIR})
+# endif()
 
-mark_as_advanced(benchmark_INCLUDE_DIR benchmark_LIBRARY)
+# mark_as_advanced(benchmark_INCLUDE_DIR benchmark_LIBRARY)
 
-add_executable(benchmark benchmark.cpp ${SRC_FILES})
-include_directories(${benchmark_INCLUDE_DIR})
-target_link_libraries(benchmark ${benchmark_LIBRARY})
+# add_executable(benchmark benchmark.cpp ${SRC_FILES})
+# include_directories(${benchmark_INCLUDE_DIR})
+# target_link_libraries(benchmark ${benchmark_LIBRARY})

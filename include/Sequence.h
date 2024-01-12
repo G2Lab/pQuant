@@ -9,7 +9,7 @@ class Sequence {
 public:
     vector<string> seqVec;
     string geneName;
-    long numSeq;
+    size_t numSeq;
     Sequence(string _geneName): geneName(_geneName), numSeq(0) {}
     Sequence(vector<string> _seqVec, string _name);
     Sequence(): geneName("NA"), numSeq(0) {}

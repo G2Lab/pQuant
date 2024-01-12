@@ -75,6 +75,19 @@
         "concepts": "cpp",
         "memory": "cpp",
         "random": "cpp",
-        "type_traits": "cpp"
+        "type_traits": "cpp",
+        "*.tcc": "cpp",
+        "regex": "cpp",
+        "csignal": "cpp",
+        "strstream": "cpp",
+        "forward_list": "cpp",
+        "list": "cpp",
+        "functional": "cpp",
+        "numeric": "cpp",
+        "cfenv": "cpp",
+        "cinttypes": "cpp",
+        "utility": "cpp",
+        "valarray": "cpp",
+        "condition_variable": "cpp"
     }
 }

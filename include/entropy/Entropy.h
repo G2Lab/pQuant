@@ -5,9 +5,11 @@
 #include <string>
 #include <map>
 #include <iostream>
+#include <utility>
 #include "Sequence.h"
 #include "util/Define.h"
 #include "util/FileReader.h"
+#include "util/util.h"
 using namespace std;
 
 

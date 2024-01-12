@@ -24,8 +24,10 @@ std::string ElapsedTime(std::chrono::seconds secs) {
 
     return result.str();
 }
-void print_progress_bar(int iter, int total, std::chrono::time_point<std::chrono::high_resolution_clock> start_time, int bar_width, bool print) {
-    if (print) {
+
+void print_progress_bar(std::string instruction, int iter, int total, std::chrono::time_point<std::chrono::high_resolution_clock> start_time, int bar_width, bool print) {
+    long divide = total < 100 ? 1 : total / 100; 
+    if (print && (iter + 1) % divide == 0) {
         // Calculate progress and time
         double progress = (double)(iter + 1) / (double)total;
         auto current_time = std::chrono::high_resolution_clock::now();
@@ -36,7 +38,7 @@ void print_progress_bar(int iter, int total, std::chrono::time_point<std::chrono
         auto estimated_time_remaining = average_time_per_iteration * (total - iter - 1);
 
         // Print progress bar
-        std::cout << "\r[";
+        std::cout << "\r " << instruction << " : [";
         int pos = bar_width * progress;
         for (int j = 0; j < bar_width; ++j) {
             if (j < pos)
@@ -53,8 +55,10 @@ void print_progress_bar(int iter, int total, std::chrono::time_point<std::chrono
         // Print time information
         std::cout << "| Elapsed Time: " << ElapsedTime(std::chrono::seconds(elapsed_time)) << "s ";
         std::cout << "| ETA: " << ElapsedTime(std::chrono::seconds(static_cast<long long>(estimated_time_remaining))) << "s ";
+        cout << "Memory : " << (double) getMemoryUsage() / (1024.0 * 1024.0 * 1024.0) << " GB";
 
         std::cout.flush();
+
     }
 }
 

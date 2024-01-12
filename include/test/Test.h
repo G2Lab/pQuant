@@ -25,6 +25,8 @@ public:
     static void kmerTables(PQuantParams &param);
 
     static void plainExp();
+    
+    static void bfvBenchmark(PQuantParams &param);
 
     static void encryptRead(PQuantParams &param);
 };

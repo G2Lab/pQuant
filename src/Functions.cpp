@@ -13,7 +13,7 @@ void print_sequences(vector<Sequence> &refs_seq, vector<Sequence> &reads_seq) {
     cout << "== Reads ==" << endl;
     for (auto &read : reads_seq) {
         cout << "Gene Name: " << read.getGeneName() << endl;
-        for (auto i = 0; i < static_cast<size_t>(read.getNumSeq()); i++) {
+        for (size_t i = 0; i < static_cast<size_t>(read.getNumSeq()); i++) {
             cout << "Exon " << i + 1 << ": " << read.getSeq(i) << endl;
         }
         cout << endl;
@@ -23,7 +23,7 @@ void encode_seq(CryptoContext<DCRTPoly> &cryptoContext, Sequence &seq, Plaintext
     // pre-compute total number of substrings
     // (then compute pack_num)
     long total_num_substr = 0;
-    for (auto i = 0; i < seq.getNumSeq(); i++) {
+    for (size_t i = 0; i < static_cast<size_t>(seq.getNumSeq()); i++) {
         total_num_substr += seq.getSeq(i).size() - K + 1;
     }
 
@@ -39,12 +39,12 @@ void encode_seq(CryptoContext<DCRTPoly> &cryptoContext, Sequence &seq, Plaintext
     // encode substrings
     long pack = 0;
     long slot = 0;
-    for (auto i = 0; i < seq.getNumSeq(); i++) {
+    for (size_t i = 0; i < static_cast<size_t>(seq.getNumSeq()); i++) {
         const auto &ref = seq.getSeq(i);
         long N = ref.size();
-        for (auto j = 0; j < N - K + 1; j++) {
+        for (int j = 0; j < N - K + 1; j++) {
             string subref = ref.substr(j, K);
-            for (auto k = 0; k < K / B; k++) {
+            for (int k = 0; k < K / B; k++) {
                 string sub_subref = subref.substr(k * B, B);
                 // remark: encode with negation, then addtion will be comparison
                 exon_encoded[pack][k][slot] = -encode_nt_to_num(sub_subref);
@@ -58,9 +58,9 @@ void encode_seq(CryptoContext<DCRTPoly> &cryptoContext, Sequence &seq, Plaintext
     }
 
     plaintexts.resize(exon_encoded.size());
-    for (auto i = 0; i < exon_encoded.size(); i++) {
+    for (size_t i = 0; i < exon_encoded.size(); i++) {
         plaintexts[i].resize(K / B);
-        for (auto j = 0; j < K / B; j++) {
+        for (int j = 0; j < K / B; j++) {
             plaintexts[i][j] = cryptoContext->MakePackedPlaintext(exon_encoded[i][j]);
         }
     }
@@ -77,11 +77,11 @@ void encode_refs(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &refs_
     if (debug) {
         cout << endl;
         cout << ref_plain[0].size() << " * " << ref_plain[0][0].size() << endl;
-        for (auto e = 0; e < ref_plain.size(); e++) {
+        for (size_t e = 0; e < ref_plain.size(); e++) {
             cout << " ==" << e << "th exon ==" << endl;
-            for (auto i = 0; i < ref_plain[e].size(); i++) {
+            for (size_t i = 0; i < ref_plain[e].size(); i++) {
                 cout << i << "th block" << endl;
-                for (auto j = 0; j < ref_plain[e][i].size(); j++) {
+                for (size_t j = 0; j < ref_plain[e][i].size(); j++) {
                     Plaintext dummy = ref_plain[e][i][j];
                     dummy->SetLength(16);
                     cout << dummy << endl;
@@ -101,7 +101,7 @@ void encode_read(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &reads
         // define 3-dim vector for the current sequence
         Plaintext_3d read_encoded;
         // for each exon, define block vectors
-        for (auto i = 0; i < seq.getNumSeq(); i++) {
+        for (size_t i = 0; i < static_cast<size_t>(seq.getNumSeq()); i++) {
             const auto &read = seq.getSeq(i);
 
             // # of kmers = size / K
@@ -111,9 +111,9 @@ void encode_read(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &reads
             Plaintext_2d encoded(kmer_num, Plaintext_1d(K / B));
 
             // cout << "Read = " << read << endl;
-            for (auto j = 0; j < kmer_num; j++) {
+            for (int j = 0; j < kmer_num; j++) {
                 string kmer = read.substr(K * j, K);
-                for (auto k = 0; k < K / B; k++) {
+                for (int k = 0; k < K / B; k++) {
                     string kmer_block = kmer.substr(k * B, B);
                     long kmer_block_num = encode_nt_to_num(kmer_block);
                     // cout << "block = " << kmer_block << " -> " << kmer_block_num << endl;
@@ -131,13 +131,13 @@ void encode_read(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &reads
         cout << endl;
         cout << "K = " << K << ", B = " << B << endl;
         cout << read_plain[0].size() << " * " << read_plain[0][0].size() << read_plain[0][0][0].size() << endl;
-        for (auto e = 0; e < read_plain.size(); e++) {
+        for (size_t e = 0; e < read_plain.size(); e++) {
             cout << " ==" << e << "th exon ==" << endl;
-            for (auto i = 0; i < read_plain[e].size(); i++) {
+            for (size_t i = 0; i < read_plain[e].size(); i++) {
                 cout << i << "th read" << endl;
-                for (auto j = 0; j < read_plain[e][i].size(); j++) {
+                for (size_t j = 0; j < read_plain[e][i].size(); j++) {
                     cout << j << "th block / " << read_plain[e][i][j].size() << endl;
-                    for (auto k = 0; k < read_plain[e][i][j].size(); k++) {
+                    for (size_t k = 0; k < read_plain[e][i][j].size(); k++) {
                         Plaintext dummy = read_plain[e][i][j][k];
                         dummy->SetLength(16);
                         cout << dummy << endl;
@@ -160,7 +160,7 @@ void encode_read2(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &read
         // for each exon, define block vectors
         vector<int64_t> dummy(slot_count);
         long encoding_loc = 0;
-        for (auto i = 0; i < seq.getNumSeq(); i++) {
+        for (size_t i = 0; i < static_cast<size_t>(seq.getNumSeq()); i++) {
             const auto &read = seq.getSeq(i);
 
             // # of kmers = size / K
@@ -170,9 +170,9 @@ void encode_read2(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &read
             Plaintext_2d encoded(kmer_num, Plaintext_1d(K / B));
 
             cout << "Read = " << read << endl;
-            for (auto j = 0; j < kmer_num; j++) {
+            for (int j = 0; j < kmer_num; j++) {
                 string kmer = read.substr(K * j, K);
-                for (auto k = 0; k < K / B; k++) {
+                for (int k = 0; k < K / B; k++) {
                     string kmer_block = kmer.substr(k * B, B);
                     long kmer_block_num = encode_nt_to_num(kmer_block);
                     cout << "block = " << kmer_block << " -> " << kmer_block_num << endl;
@@ -198,13 +198,13 @@ void encode_read2(CryptoContext<DCRTPoly> &cryptoContext, vector<Sequence> &read
         cout << endl;
         cout << "K = " << K << ", B = " << B << endl;
         cout << read_plain[0].size() << " * " << read_plain[0][0].size() << read_plain[0][0][0].size() << endl;
-        for (auto e = 0; e < read_plain.size(); e++) {
+        for (size_t e = 0; e < read_plain.size(); e++) {
             cout << " ==" << e << "th exon ==" << endl;
-            for (auto i = 0; i < read_plain[e].size(); i++) {
+            for (size_t i = 0; i < read_plain[e].size(); i++) {
                 cout << i << "th read" << endl;
-                for (auto j = 0; j < read_plain[e][i].size(); j++) {
+                for (size_t j = 0; j < read_plain[e][i].size(); j++) {
                     cout << j << "th block / " << read_plain[e][i][j].size() << endl;
-                    for (auto k = 0; k < read_plain[e][i][j].size(); k++) {
+                    for (size_t k = 0; k < read_plain[e][i][j].size(); k++) {
                         Plaintext dummy = read_plain[e][i][j][k];
                         dummy->SetLength(16);
                         cout << dummy << endl;
@@ -222,11 +222,11 @@ void encrypt_reads(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
     for (auto &kmer_exon : read_plain) {
         Ciphertext_3d ctxt_exon;
         ctxt_exon.resize(kmer_exon.size());
-        for (auto i = 0; i < kmer_exon.size(); i++) {
+        for (size_t i = 0; i < kmer_exon.size(); i++) {
             ctxt_exon[i].resize(kmer_exon[i].size());
-            for (auto j = 0; j < kmer_exon[i].size(); j++) {
+            for (size_t j = 0; j < kmer_exon[i].size(); j++) {
                 ctxt_exon[i][j].resize(kmer_exon[i][j].size());
-                for (auto k = 0; k < kmer_exon[i][j].size(); k++) {
+                for (size_t k = 0; k < kmer_exon[i][j].size(); k++) {
                     // cout << "i,j,k = " << i << ", " << j << ", " << k << endl;
                     ctxt_exon[i][j][k] = cryptoContext->Encrypt(keyPair.publicKey, kmer_exon[i][j][k]);
                 }
@@ -251,20 +251,20 @@ void eqaulity_test(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
     // compute eqtest for all kmers & packings and aggregate all to save in one ciphertext
 
     ctxt_out.resize(ctxt_kmers.size());
-    for (auto n_exon = 0; n_exon < ctxt_kmers.size(); n_exon++) {
+    for (size_t n_exon = 0; n_exon < ctxt_kmers.size(); n_exon++) {
         ctxt_out[n_exon].resize(ctxt_kmers[n_exon].size());
 
-        for (auto n_read = 0; n_read < ctxt_kmers[n_exon].size(); n_read++) {
+        for (size_t n_read = 0; n_read < ctxt_kmers[n_exon].size(); n_read++) {
             // cout << "read = " << reads_seq[n_exon].getSeq(n_read) << endl;
             ctxt_out[n_exon][n_read].resize(ref_plain.size());
 
-            for (auto n_exon_ref = 0; n_exon_ref < ref_plain.size(); n_exon_ref++) {
+            for (size_t n_exon_ref = 0; n_exon_ref < ref_plain.size(); n_exon_ref++) {
                 Ciphertext_1d ctxt_pack_list;
 
-                for (auto n_pack = 0; n_pack < ref_plain[n_exon_ref].size(); n_pack++) {
+                for (size_t n_pack = 0; n_pack < ref_plain[n_exon_ref].size(); n_pack++) {
                     // cout << "ref = " << refs_seq[n_exon_ref].getSeq(n_pack) << endl;
                     Ciphertext_1d ctxt_kmers_list;
-                    for (auto n_kmer = 0; n_kmer < ctxt_kmers[n_exon][n_read].size(); n_kmer++) {
+                    for (size_t n_kmer = 0; n_kmer < ctxt_kmers[n_exon][n_read].size(); n_kmer++) {
                         Ciphertext_1d ctxt_blocks = ctxt_kmers[n_exon][n_read][n_kmer];
                         Ciphertext_1d ctxt_sub(ctxt_blocks.size());
                         vector<Plaintext> plain_blocks = ref_plain[n_exon_ref][n_pack];
@@ -273,7 +273,7 @@ void eqaulity_test(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
                         // substitution
                         long n_blocks = K / B;
                         // cout << "substitute test (" << n_pack << ", " << n_kmer << ")" << endl;
-                        for (auto i = 0; i < n_blocks; i++) {
+                        for (int i = 0; i < n_blocks; i++) {
                             ctxt_sub[i] = cryptoContext->EvalAdd(ctxt_blocks[i], plain_blocks[i]);
 
                             // Plaintext ctxt_dec;
@@ -295,7 +295,7 @@ void eqaulity_test(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
                         // ctxt_eqtest = (ctxt0 - "0")^2 + (ctxt0 - ctxt1)^2 + ... + (ctxtn-1 - ctxtn)^2 +
                         Ciphertext<DCRTPoly> ctxt_eqtest = cryptoContext->EvalSquare(ctxt_sub[0]);
 
-                        for (auto i = 0; i < K / B - 1; i++) {
+                        for (int i = 0; i < K / B - 1; i++) {
                             Ciphertext<DCRTPoly> ctxt_dummy = cryptoContext->EvalSub(ctxt_sub[i], ctxt_sub[i + 1]);
                             cryptoContext->EvalSquareInPlace(ctxt_dummy);
                             cryptoContext->EvalAddInPlace(ctxt_eqtest, ctxt_dummy);
@@ -318,7 +318,7 @@ void eqaulity_test(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
                         // cout << plain_dec << endl;
 
                         // ctxt <- 1 - ctxt^{p-1}
-                        for (auto i = 0; i < 16; i++) {
+                        for (size_t i = 0; i < 16; i++) {
                             // cout << i << "th squaring.." << endl;
                             cryptoContext->EvalSquareInPlace(ctxt_eqtest);
                             // Plaintext plain_dec;
@@ -336,7 +336,7 @@ void eqaulity_test(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
                         // plain_dec->SetLength(32);
                         // cout << plain_dec << endl;
                         // rotsum
-                        for (auto i = 0; i < log_poly_modulus_degree; i++) {
+                        for (long i = 0; i < log_poly_modulus_degree; i++) {
                             // cout << "rotate " << i << endl;
                             Ciphertext<DCRTPoly> rot_dummy = cryptoContext->EvalRotate(ctxt_eqtest, (1 << i));
                             cryptoContext->EvalAddInPlace(ctxt_eqtest, rot_dummy);
@@ -369,7 +369,7 @@ void eqaulity_test(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &ke
                 // cout << "push back ref" << n_exon << ", " << n_read << ", " << endl;
                 // cout << "final test in ctxt_out : " << n_exon << ", " << n_read << ", " << n_exon_ref << endl;
                 // cout << "checkc aggregate" << endl;
-                // for (auto i = 0; i < ctxt_pack_list.size(); i++) {
+                // for (size_t i = 0; i < ctxt_pack_list.size(); i++) {
                 //     Plaintext plain_pack;
                 //     cryptoContext->Decrypt(keyPair.secretKey, ctxt_pack_list[i], &plain_pack);
                 //     plain_pack->SetLength(16);
@@ -388,16 +388,16 @@ void decrypt_output(CryptoContext<DCRTPoly> &cryptoContext, KeyPair<DCRTPoly> &k
     cout << "ctxt_out size check" << endl;
     cout << "exon_reads = " << ctxt_out.size() << ", reads " << ctxt_out[0].size() << ", exon_num_refs = " << ctxt_out[0][0].size() << endl;
 
-    for (auto n_exon_read = 0; n_exon_read < ctxt_out.size(); n_exon_read++) {
-        for (auto n_read = 0; n_read < ctxt_out[n_exon_read].size(); n_read++) {
+    for (size_t n_exon_read = 0; n_exon_read < ctxt_out.size(); n_exon_read++) {
+        for (size_t n_read = 0; n_read < ctxt_out[n_exon_read].size(); n_read++) {
             cout << "read gene " << reads_seq[n_exon_read].getGeneName() << endl;
             cout << " (" << reads_seq[n_exon_read].getSeq(n_read) << ")" << endl;
-            for (auto n_exon_ref = 0; n_exon_ref < ctxt_out[n_exon_read][n_read].size();
+            for (size_t n_exon_ref = 0; n_exon_ref < ctxt_out[n_exon_read][n_read].size();
                  n_exon_ref++) {
                 cout << "   vs ref gene " << refs_seq[n_exon_ref].getGeneName();
                 if (refs_seq[n_exon_ref].getGeneName() == reads_seq[n_exon_read].getGeneName()) cout << "(v)";
                 cout << endl;
-                // for (auto i = 0; i < refs_seq[n_exon_ref].getNumSeq(); i++) {
+                // for (size_t i = 0; i < refs_seq[n_exon_ref].getNumSeq(); i++) {
                 //     cout << "   " << refs_seq[n_exon_ref].getSeq(i) << endl;
                 // }
                 Plaintext plain_out;

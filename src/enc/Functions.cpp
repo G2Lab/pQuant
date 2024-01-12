@@ -9,7 +9,7 @@ void printKmerTable(KmerTable &kmerTable, bool isRef) {
 
         for (auto &p : kmerTable.count) {
             cout << "kmer = " << p.first << " => count : ";
-            for (int i = 0; i < p.second.size(); i++) {
+            for (size_t i = 0; i < p.second.size(); i++) {
                 cout << p.second[i] << " ";
             }
             // print entropy
@@ -55,7 +55,7 @@ void encryptReadKmer(KmerTable &kmerTableRead, long K, Ciphertext_1d &ct, Crypto
 
         // update progress bar
         if (progress_bar)
-            print_progress_bar(i, n_plain_vecs, start_time);
+            print_progress_bar("EncryptReadKmer", i, n_plain_vecs, start_time);
     }
 
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -86,8 +86,8 @@ void encodeRefKmer(KmerTable &kmerTableRef, long K, Plaintext_2d &pt_ref, Crypto
         long num_slot = p.first % n_slots;
 
         // parameter checkpoint
-        assert(n_genes == p.second.size());
-        for (int i = 0; i < p.second.size(); i++) {
+        // assert(n_genes == p.second.size());
+        for (size_t i = 0; i < p.second.size(); i++) {
             // encode reverse polynomial version
             if (num_slot == 0) {
                 plain_vec[i][num_vec][num_slot] += p.second[i];
@@ -96,6 +96,12 @@ void encodeRefKmer(KmerTable &kmerTableRef, long K, Plaintext_2d &pt_ref, Crypto
             }
         }
     }
+    auto table_time = std::chrono::high_resolution_clock::now();
+    auto table_duration = std::chrono::duration_cast<std::chrono::seconds>(table_time - start_time).count();
+
+    cout << "Ref Kmer Table generated" << endl;
+    cout << "encodeRefKmer table duration = " << table_duration << " s" << endl;
+    cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << endl;
 
     pt_ref.resize(n_genes);
     for (int g = 0; g < n_genes; g++) {
@@ -103,9 +109,8 @@ void encodeRefKmer(KmerTable &kmerTableRef, long K, Plaintext_2d &pt_ref, Crypto
         for (int i = 0; i < n_vec_per_gene; i++) {
             Plaintext plain = cc->MakeCoefPackedPlaintext(plain_vec[g][i]);
             pt_ref[g][i] = plain;
-
             // update progress bar
-            print_progress_bar(g * n_vec_per_gene + i, n_genes * n_vec_per_gene, start_time);
+            print_progress_bar("EncodeRefKmer", g * n_vec_per_gene + i, n_genes * n_vec_per_gene, start_time);
         }
     }
 
@@ -124,33 +129,87 @@ void multCtxtByRef(Ciphertext_2d &ct_out, Ciphertext_1d &ct, Plaintext_2d &pt_re
         // ct_out[i] = ct[i] * pt[i]
 
         ct_out[g].resize(ct.size());
-        for (int i = 0; i < ct.size(); i++) {
+        for (size_t i = 0; i < ct.size(); i++) {
             ct_out[g][i] = cc->EvalMult(ct[i], pt_ref[g][i]);
         }
     }
 }
 
-void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair) {
-    auto start_time = std::chrono::high_resolution_clock::now();
+void multCtxtByKmerTableRef(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, long K, CryptoContext<DCRTPoly> &cc) {
+    long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
+    long n_genes = kmerTableRef.geneNameIndex.size();;
+    long n_vec_per_gene = ceil(pow(4, K) / (double)n_slots);
+    ct_out.resize(n_genes);
+    
+    cout << "n_slots = " << n_slots << endl;
+    cout << "n_genes = " << n_genes << endl;
+    cout << "n_vec_per_gene = " << n_vec_per_gene << endl;
 
-    for (int i = 0; i < ct_out.size(); i++) {
+    auto start_time = std::chrono::high_resolution_clock::now();
+    
+    vector<vector<vector<int64_t>>> plain_vec(n_genes, vector<vector<int64_t>>(n_vec_per_gene, vector<int64_t>(n_slots, 0)));
+
+    for (auto &p : kmerTableRef.count) {
+        long num_vec = p.first / n_slots;
+        long num_slot = p.first % n_slots;
+
+        // parameter checkpoint
+        // assert(n_genes == p.second.size());
+        for (size_t i = 0; i < p.second.size(); i++) {
+            // encode reverse polynomial version
+            if (num_slot == 0) {
+                plain_vec[i][num_vec][num_slot] += p.second[i];
+            } else {
+                plain_vec[i][num_vec][n_slots - num_slot] -= p.second[i];
+            }
+        }
+    }
+    auto table_time = std::chrono::high_resolution_clock::now();
+    auto table_duration = std::chrono::duration_cast<std::chrono::seconds>(table_time - start_time).count();
+
+    cout << "Ref Kmer Table generated" << endl;
+    cout << "encodeRefKmer table duration = " << table_duration << " s" << endl;
+    cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << endl;
+
+    for (int g = 0; g < n_genes; g++) {
+        // assert(ct.size() == pt_ref[g].size());
+        // multiply ciphertexts in ct with plaintexts in pt
+        // result is stored in ct_out
+        // ct_out[i] = ct[i] * pt[i]
+
+        ct_out[g].resize(ct.size());
+        Plaintext plain;
+        for (size_t i = 0; i < ct.size(); i++) {
+            plain = cc->MakeCoefPackedPlaintext(plain_vec[g][i]);
+            ct_out[g][i] = cc->EvalMult(ct[i], plain);
+
+            // update progress bar
+            print_progress_bar("multCtxtByKmerTableRef", g * ct.size() + i, n_genes * ct.size(), start_time);
+        }
+    }
+}
+
+void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair) {
+    // auto start_time = std::chrono::high_resolution_clock::now();
+
+    for (size_t i = 0; i < ct_out.size(); i++) {
         Plaintext plain_out;
         cc->Decrypt(keyPair.secretKey, ct_out[i], &plain_out);
         pt_out.push_back(plain_out);
 
         // update progress bar
-        print_progress_bar(i, ct_out.size(), start_time);
+        // print_progress_bar(i, ct_out.size(), start_time);
     }
 }
 
 void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DCRTPoly> &cc) {
-    auto start_time = std::chrono::high_resolution_clock::now();
+    // auto start_time = std::chrono::high_resolution_clock::now();
 
     ct = ct_vec[0];
-    for (int i = 1; i < ct_vec.size(); i++) {
+    for (size_t i = 1; i < ct_vec.size(); i++) {
         ct = cc->EvalAdd(ct, ct_vec[i]);
 
         // update progress bar
-        print_progress_bar(i, ct_vec.size(), start_time);
+        // print_progress_bar(i, ct_vec.size(), start_time);
     }
 }

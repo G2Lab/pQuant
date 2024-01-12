@@ -2,7 +2,7 @@
 
 long convertKmerToNum(string kmer) {
     long num = 0;
-    for (int i = 0; i < kmer.size(); i++) {
+    for (size_t i = 0; i < kmer.size(); i++) {
         if (kmer[i] == 'A') {
             num = num * 4 + 0;
         } else if (kmer[i] == 'C') {
@@ -22,21 +22,20 @@ void computeKmerTable(vector<Sequence>& gene, long K, KmerTable &kmerTable) {
     kmerTable.K = K;
     if (kmerTable.geneNameIndex.size() == 0) {
         // save gene list into geneNameIndex
-        for (int i = 0; i < gene.size(); i++) {
+        for (size_t i = 0; i < gene.size(); i++) {
             kmerTable.geneNameIndex.push_back(gene[i].getGeneName());
         }
     }
 
+    auto start_time = std::chrono::high_resolution_clock::now();
     // count kmers in gene
-    for (int i = 0; i < gene.size(); i++) {
-        cout << "check progress" << endl;
-        cout << "i = " << i << " / " << gene.size() << endl;
+    for (size_t i = 0; i < gene.size(); i++) {
         for (int j = 0; j < gene[i].getNumSeq(); j++) {
             string seq = gene[i].getSeq(j);
-            if (seq.size() < K) {
+            if (seq.size() < static_cast<size_t>(K)) {
                 continue;
             }
-            for (int k = 0; k < seq.size() - K + 1; k++) {
+            for (size_t k = 0; k < seq.size() - K + 1; k++) {
                 string kmer = seq.substr(k, K);
                 long num = convertKmerToNum(kmer);
                 // cout << "kmer = " << kmer << " => num = " << num << endl;
@@ -49,15 +48,18 @@ void computeKmerTable(vector<Sequence>& gene, long K, KmerTable &kmerTable) {
                 kmerTable.count[num][i] += 1;
             }
         }
+        print_progress_bar("countKmersPerGene", i, gene.size(), start_time);
     }
+
     // compute entropy
+    start_time = std::chrono::high_resolution_clock::now();
     for (auto &kmerCount : kmerTable.count) {
         long sum = 0;
-        for (int i = 0; i < kmerCount.second.size(); i++) {
+        for (size_t i = 0; i < kmerCount.second.size(); i++) {
             sum += kmerCount.second[i];
         }
         float entropy = 0;
-        for (int i = 0; i < kmerCount.second.size(); i++) {
+        for (size_t i = 0; i < kmerCount.second.size(); i++) {
             float p = (float)kmerCount.second[i] / sum;
             if (p > 0) {
                 entropy += p * log2(p);
@@ -65,6 +67,7 @@ void computeKmerTable(vector<Sequence>& gene, long K, KmerTable &kmerTable) {
         }
         entropy = -entropy;
         kmerTable.entropy[kmerCount.first] = entropy;
+        // print_progress_bar("ComputeEntropy", kmerCount.first, kmerTable.count.size(), start_time);
     }
 }
 
@@ -73,13 +76,13 @@ void computeKmerTableForRead(vector<Sequence>& read, long K, KmerTable &kmerTabl
     kmerTable.K = K;
 
     // count kmers in gene
-    for (int i = 0; i < read.size(); i++) {
+    for (size_t i = 0; i < read.size(); i++) {
         for (int j = 0; j < read[i].getNumSeq(); j++) {
             string seq = read[i].getSeq(j);
-            if (seq.size() < K) {
+            if (seq.size() < static_cast<size_t>(K)) {
                 continue;
             }
-            for (int k = 0; k < seq.size() - K + 1; k++) {
+            for (size_t k = 0; k < seq.size() - K + 1; k++) {
                 string kmer = seq.substr(k, K);
                 long num = convertKmerToNum(kmer);
                 // cout << "kmer = " << kmer << " => num = " << num << endl;

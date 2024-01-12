@@ -58,6 +58,8 @@ int main(int argc, char **argv) {
         Test::kmerTables(param);
     } else if (target.compare("plain") == 0) {
         Test::plainExp();
+    } else if (target.compare("bench") == 0) {
+        Test::bfvBenchmark(param);
     } else if (target.compare("encread") == 0) {
         Test::encryptRead(param);
     }

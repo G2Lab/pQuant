@@ -23,7 +23,7 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
     for (auto &ref_seq : refs_seq) {
         cout << "Gene name: " << ref_seq.getGeneName() << ", Num seq: " << ref_seq.getNumSeq() << endl;
         n_gene_ref += 1;
-        for (int i = 0; i < ref_seq.getNumSeq(); i++) {
+        for (size_t i = 0; i < static_cast<size_t>(ref_seq.getNumSeq()); i++) {
             // cout << "  -  " << ref_seq.getSeq(i) << endl;
             total_n_ref += 1;
             long len = ref_seq.getSeq(i).size();
@@ -41,7 +41,7 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
     for (auto &read_seq : reads_seq) {
         // cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
         n_gene_read += 1;
-        for (int i = 0; i < read_seq.getNumSeq(); i++) {
+        for (size_t i = 0; i < static_cast<size_t>(read_seq.getNumSeq()); i++) {
             // cout << "   " << read_seq.getSeq(i) << endl;
             total_n_read += 1;
         }
@@ -105,7 +105,7 @@ void Test::previousAlgorithm() {
     long log_poly_modulus_size = (long)log2(slot_count);
     cout << "log_slot_count = " << log_poly_modulus_size << endl;
     vector<int32_t> rotList(log_poly_modulus_size);
-    for (int i = 0; i < rotList.size(); i++) {
+    for (size_t i = 0; i < rotList.size(); i++) {
         rotList[i] = (1 << i);
     }
     cryptoContext->EvalRotateKeyGen(keyPair.secretKey, rotList);
@@ -170,7 +170,7 @@ void Test::kmerTables(PQuantParams &param) {
     printKmerTable(kmerTableRef, true);
     // for (auto &p : kmerTableRef.count) {
     //     cout << "kmer = " << p.first << " => count = ";
-    //     for (int i = 0; i < p.second.size(); i++) {
+    //     for (size_t i = 0; i < p.second.size(); i++) {
     //         cout << p.second[i] << " ";
     //     }
     //     cout << endl;
@@ -223,7 +223,7 @@ void Test::plainExp() {
         string readGeneName = read_seq.getGeneName();
         int random2 = std::rand() % numSeq;
         string read = read_seq.getSeq(random2);
-        // for (int i = 0; i < numSeq; i++) {
+        // for (size_t i = 0; i < numSeq; i++) {
         vector<long> count_vec;
         // string read = read_seq.getSeq(i);
         cout << "(" << current_n << " / " << total_n_read << ") ";
@@ -263,6 +263,132 @@ void Test::plainExp() {
     }
 }
 
+void Test::bfvBenchmark(PQuantParams &param) {
+    TimeVar t;
+    double processingTime(0.0);
+
+    size_t memory_usage = getMemoryUsage();
+
+    // Print memory usage in a human-readable format
+    double memory_usage_gb = static_cast<double>(memory_usage) / (1024.0 * 1024.0 * 1024.0); // Convert to GB
+
+    std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
+
+    CCParams<CryptoContextBFVRNS> parameters;
+    parameters.SetSecurityLevel(HEStd_128_classic);
+    parameters.SetPlaintextModulus(65537);
+    parameters.SetMultiplicativeDepth(2);
+    parameters.SetMaxRelinSkDeg(2);
+    parameters.SetScalingModSize(20);
+
+    CryptoContext<DCRTPoly> cryptoContext = GenCryptoContext(parameters);
+    // enable features that you wish to use
+    cryptoContext->Enable(PKE);
+    cryptoContext->Enable(KEYSWITCH);
+    cryptoContext->Enable(LEVELEDSHE);
+    cryptoContext->Enable(ADVANCEDSHE);
+
+
+    std::cout << "\np = " << cryptoContext->GetCryptoParameters()->GetPlaintextModulus() << std::endl;
+    std::cout << "n = " << cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2
+              << std::endl;
+    std::cout << "log2 q = "
+              << log2(cryptoContext->GetCryptoParameters()->GetElementParams()->GetModulus().ConvertToDouble())
+              << std::endl;
+
+    // Initialize Public Key Containers
+    KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
+    cryptoContext->EvalMultKeysGen(keyPair.secretKey);
+    Plaintext_3d ref_plain;
+    Plaintext_4d read_plain;
+    long slot_count = cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
+    long log_poly_modulus_size = (long)log2(slot_count);
+    cout << "log_slot_count = " << log_poly_modulus_size << endl;
+    vector<int32_t> rotList(log_poly_modulus_size);
+
+
+    // benchmark each operations
+    long iteration = 1000;
+    cout << "<<< every algorithm is iterated " << iteration << " times >>> " << endl << endl;
+
+    // generate random plaintexts
+    vector<int64_t> plain_vec(slot_count, 0);
+    for (int i = 0; i < slot_count; i++) {
+        plain_vec[i] = rand() % 2;
+    }
+
+    // encode
+    Plaintext plain;
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        plain = cryptoContext->MakeCoefPackedPlaintext(plain_vec);
+    }
+    processingTime = TOC(t);
+    std::cout << "encode time: " << processingTime / iteration << "ms" << std::endl;
+
+    //encrypt
+    Ciphertext<DCRTPoly> ciphertext, ciphertextMult;
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        ciphertext = cryptoContext->Encrypt(keyPair.secretKey, plain);
+        ciphertextMult = cryptoContext->Encrypt(keyPair.secretKey, plain);
+    }
+    processingTime = TOC(t);
+    std::cout << "Encrypt time: " << processingTime / iteration << "ms" << std::endl;
+
+    // decrypt
+    Plaintext plain2;
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        cryptoContext->Decrypt(keyPair.secretKey, ciphertext, &plain2);
+    }
+    processingTime = TOC(t);
+    std::cout << "Decrypt time: " << processingTime / iteration << "ms" << std::endl;
+
+    // mult ctxt * plain
+    Ciphertext<DCRTPoly> ciphertext2;
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        ciphertext2 = cryptoContext->EvalMult(ciphertext, plain);
+    }
+    processingTime = TOC(t);
+    std::cout << "Mult ctxt * plain time: " << processingTime / iteration << "ms" << std::endl;
+
+    // mult ctxt * vector
+    Ciphertext<DCRTPoly> ciphertext4;
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        Plaintext plain = cryptoContext->MakeCoefPackedPlaintext(plain_vec);
+        ciphertext4 = cryptoContext->EvalMult(ciphertext, plain);
+    }
+    processingTime = TOC(t);
+    std::cout << "Mult ctxt * vector (including encoding) time: " << processingTime / iteration << "ms" << std::endl;
+
+    // mult ctxt * ctxt
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        ciphertext2 = cryptoContext->EvalMult(ciphertext, ciphertextMult);
+    }
+    processingTime = TOC(t);
+    std::cout << "Mult ctxt * ctxt time: " << processingTime / iteration << "ms" << std::endl;
+    // add
+    Ciphertext<DCRTPoly> ciphertext3, ciphertextAdd;
+    ciphertextAdd = cryptoContext->Encrypt(keyPair.secretKey, plain);
+    TIC(t);
+    for (int i = 0; i < iteration; i++) {
+        ciphertext3 = cryptoContext->EvalAdd(ciphertext, ciphertextAdd);
+    }
+    processingTime = TOC(t);
+    std::cout << "Add time: " << processingTime / iteration << "ms" << std::endl;
+
+    memory_usage = getMemoryUsage();
+
+    // Print memory usage in a human-readable format
+    memory_usage_gb = static_cast<double>(memory_usage) / (1024.0 * 1024.0 * 1024.0); // Convert to GB
+
+    std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
+}
+
 void Test::encryptRead(PQuantParams &param) {
     // Read read sequences from the file
     vector<Sequence> reads_seq, refs_seq;
@@ -296,53 +422,68 @@ void Test::encryptRead(PQuantParams &param) {
     computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
     computeKmerTable(refs_seq, param.k, kmerTableRef);
 
-    // printKmerTable(kmerTableRef, true);
-    // printKmerTable(kmerTableRead, false);
-
-
-    cout << " === run encodeRefKmer === " << endl;
-    Plaintext_2d pt_ref;
-    encodeRefKmer(kmerTableRef, param.k, pt_ref, cryptoContext, keyPair, true);
+    printKmerTable(kmerTableRef, true);
+    // check kmerTable lengths
     cout << endl;
-    cout << "pt_ref.size() = " << pt_ref.size() << endl;
-    for (auto &p : pt_ref) {
-        cout << "p.size() = " << p.size() << endl;
-    }
+    cout << endl;
+    cout << "kmerTableRef.count.size() = " << kmerTableRef.count.size() << endl;
+    cout << "kmerTableRead.countRead.size() = " << kmerTableRead.countRead.size() << endl;
+    cout << "kmerTableRef.entropy.size() = " << kmerTableRef.entropy.size() << endl;
     cout << endl;
 
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto end_time = std::chrono::high_resolution_clock::now();
+    
+    start_time = std::chrono::high_resolution_clock::now();
+    cout << endl;
     cout << " === run encryptReadKmer === " << endl;
     Ciphertext_1d ct;
     encryptReadKmer(kmerTableRead, param.k, ct, cryptoContext, keyPair);
     cout << endl;
     cout << "ct.size() = " << ct.size() << endl;
     cout << endl;
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_encread = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    cout << "encryptReadKmer duration = " << duration_encread << " s" << endl;
 
-    auto start_time = std::chrono::high_resolution_clock::now();
-
+    start_time = std::chrono::high_resolution_clock::now();
+    cout << endl;
     cout << " === run multCtxtByRef === " << endl;
     Ciphertext_2d ct_out;
-    multCtxtByRef(ct_out, ct, pt_ref, cryptoContext);
+    // multCtxtByRef(ct_out, ct, pt_ref, cryptoContext);
+    multCtxtByKmerTableRef(ct_out, ct, kmerTableRef, param.k, cryptoContext);
     cout << endl;
     cout << "ct_out.size() = " << ct_out.size() << endl;
     cout << endl;
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_mult = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    cout << "multCtxtByRef duration = " << duration_mult << " s" << endl;
 
+    start_time = std::chrono::high_resolution_clock::now();
+    cout << endl;
     cout << " === run sumUpCtxt === " << endl;
     Ciphertext_1d ct_sum(ct_out.size());
-    for (int i = 0; i < ct_out.size(); i++) {
+    for (size_t i = 0; i < ct_out.size(); i++) {
         sumUpCtxt(ct_sum[i], ct_out[i], cryptoContext);
     }
     cout << endl;
     cout << endl;
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_sum = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    cout << "sumUpCtxt duration = " << duration_sum << " s" << endl;
 
+    start_time = std::chrono::high_resolution_clock::now();
+    cout << endl;
     cout << " === run decrypt_output === " << endl;
     Plaintext_1d pt_sum(ct_sum.size());
-    for (int i = 0; i < ct_sum.size(); i++) {
+    for (size_t i = 0; i < ct_sum.size(); i++) {
         cryptoContext->Decrypt(keyPair.secretKey, ct_sum[i], &pt_sum[i]);
     }
     cout << endl;
     cout << "decrypt done" << endl;
     cout << endl;
-    for (int i = 0; i < pt_sum.size(); i++) {
+    for (size_t i = 0; i < pt_sum.size(); i++) {
         auto plain = pt_sum[i]->GetCoefPackedValue();
         cout << plain[0] << endl;
         // cout << plain[0] << endl;
@@ -350,12 +491,16 @@ void Test::encryptRead(PQuantParams &param) {
         // cout << plain << endl;
     }
     cout << endl;
-
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
-    cout << "total duration = " << duration << " s" << endl;
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_dec = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
+    cout << "dec duration = " << duration_dec << " s" << endl;
 
     // vector<Plaintext> pt_out;
     // decCtxtOut(pt_out, ct_out, cryptoContext, keyPair);
     // cout << "pt_out.size() = " << pt_out.size() << endl;
+    cout << "== duration summary ==" << endl;
+    cout << "encryptReadKmer duration = " << duration_encread << " s" << endl;
+    cout << "multCtxtByRef duration   = " << duration_mult << " s" << endl;
+    cout << "sumUpCtxt duration       = " << duration_sum << " s" << endl;
+    cout << "dec duration             = " << duration_dec << " s" << endl;
 }
