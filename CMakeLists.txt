@@ -54,42 +54,49 @@ else()
     link_libraries( ${OpenFHE_SHARED_LIBRARIES} )
 endif()
 
-include(FetchContent)
-FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        release-1.11.0
-)
-FetchContent_MakeAvailable(googletest)
+# include(FetchContent)
+# FetchContent_Declare(
+#     googletest
+#     GIT_REPOSITORY https://github.com/google/googletest.git
+#     GIT_TAG        release-1.11.0
+# )
+# FetchContent_MakeAvailable(googletest)
 
-# Fetch and populate Google Benchmark
-FetchContent_Declare(
-    googlebenchmark
-    GIT_REPOSITORY https://github.com/google/benchmark.git
-    GIT_TAG v1.5.4
-)
-FetchContent_Populate(googlebenchmark)
+# # Fetch and populate Google Benchmark
+# FetchContent_Declare(
+#     googlebenchmark
+#     GIT_REPOSITORY https://github.com/google/benchmark.git
+#     GIT_TAG v1.5.4
+# )
+# FetchContent_Populate(googlebenchmark)
 
-add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR})
+# add_subdirectory(${googlebenchmark_SOURCE_DIR} ${googlebenchmark_BINARY_DIR})
 
-include_directories(${googletest_SOURCE_DIR}/googletest/include)
-include_directories(${googletest_SOURCE_DIR}/googlemock/include)
-include_directories(${googlebenchmark_SOURCE_DIR}/include)
+# include_directories(${googletest_SOURCE_DIR}/googletest/include)
+# include_directories(${googletest_SOURCE_DIR}/googlemock/include)
+# include_directories(${googlebenchmark_SOURCE_DIR}/include)
+
+# include(FetchContent)
+# FetchContent_Declare(
+#     nlohman_json 3.2.0
+#     GIT_REPOSITORY https://github.com/nlohmann/json.git
+# )
+# FetchContent_MakeAvailable(nlohman_json)
 
 include_directories(include)
-include_directories(include/entropy)
-include_directories(include/enc)
-include_directories(include/test)
-
+include_directories(include/func)
+include_directories(include/util)
+# include_directories(${nlohmann_json_SOURCE_DIR}/include/nlohmann)
 
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 list(FILTER SRC_FILES EXCLUDE REGEX "src/main.cpp")
 file(GLOB_RECURSE TEST_FILES test/*.cpp)
 
 add_executable(pquant src/main.cpp ${SRC_FILES})
+# target_link_libraries(pquant PRIVATE nlohmann_json::nlohmann_json)
 
-add_executable(test_all ${TEST_FILES} ${SRC_FILES})
-target_link_libraries(test_all gtest gtest_main)
+# add_executable(test_all ${TEST_FILES} ${SRC_FILES})
+# target_link_libraries(test_all gtest gtest_main)
 
 # set(benchmark_ROOT_DIR "" CACHE PATH "Folder containing benchmark")
 

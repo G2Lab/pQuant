@@ -1,4 +1,4 @@
-#include "Sequence.h"
+#include "func/Sequence.h"
 
 Sequence::Sequence(vector<string> _seqVec, string _name) {
     seqVec = _seqVec;

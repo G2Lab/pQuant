@@ -17,4 +17,6 @@ void computeKmerTable(vector<Sequence>& gene, long K, KmerTable &kmerTable);
 
 void computeKmerTableForRead(vector<Sequence>& read, long K, KmerTable &kmerTable);
 
+void computeKmerTable2(vector<Sequence>& gene, long K, KmerTable2 &kmerTable);
+
 #endif

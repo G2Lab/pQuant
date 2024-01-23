@@ -1,13 +1,13 @@
-#include "test/Test.h"
+#include "Task.h"
 
-void Test::testReadFastaFiles(const string &ref_filename, const string &read_filename) {
+void Task::readFastaFiles(PQuantParams &param) {
     // Read reference sequences from the file
     vector<Sequence> refs_seq;
-    readFastaFile(ref_filename, refs_seq);
+    readFastaFile(param.filename_read, refs_seq);
 
     // Read read sequences from the file
     vector<Sequence> reads_seq;
-    readFastaFile(read_filename, reads_seq);
+    readFastaFile(param.filename_ref, reads_seq);
 
     long total_n_ref = 0;
     long n_gene_ref = 0;
@@ -19,7 +19,7 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
     long avg = 0;
     // Print some information about the reference sequences
     cout << "Reference sequences:" << endl;
-    cout << ref_filename << endl;
+    cout << param.filename_ref << endl;
     for (auto &ref_seq : refs_seq) {
         cout << "Gene name: " << ref_seq.getGeneName() << ", Num seq: " << ref_seq.getNumSeq() << endl;
         n_gene_ref += 1;
@@ -37,7 +37,7 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
 
     // Print some information about the read sequences
     cout << "Read sequences:" << endl;
-    cout << read_filename << endl;
+    cout << param.filename_read << endl;
     for (auto &read_seq : reads_seq) {
         // cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
         n_gene_read += 1;
@@ -56,95 +56,7 @@ void Test::testReadFastaFiles(const string &ref_filename, const string &read_fil
     cout << "avg = " << avg / total_n_ref << endl;
 }
 
-void Test::previousAlgorithm() {
-    TimeVar t;
-    double processingTime(0.0);
-
-    string filename_read = "../dataset/five_genes/five_gene_reads_shorten.fa";
-    string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
-    long K = 32;
-    long B = 8;
-
-    vector<Sequence> refs_seq;
-    readFastaFile(filename_ref, refs_seq);
-
-    // Read read sequences from the file
-    vector<Sequence> reads_seq;
-    readFastaFile(filename_read, reads_seq);
-
-    // benchmarking variables
-    // TimeVar t;
-    // double processingTime(0.0);
-
-    CCParams<CryptoContextBFVRNS> parameters;
-    parameters.SetPlaintextModulus(65537);
-    parameters.SetMultiplicativeDepth(18);
-    parameters.SetMaxRelinSkDeg(2);
-    parameters.SetScalingModSize(40);
-
-    CryptoContext<DCRTPoly> cryptoContext = GenCryptoContext(parameters);
-    // enable features that you wish to use
-    cryptoContext->Enable(PKE);
-    cryptoContext->Enable(KEYSWITCH);
-    cryptoContext->Enable(LEVELEDSHE);
-    cryptoContext->Enable(ADVANCEDSHE);
-
-    std::cout << "\np = " << cryptoContext->GetCryptoParameters()->GetPlaintextModulus() << std::endl;
-    std::cout << "n = " << cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2
-              << std::endl;
-    std::cout << "log2 q = "
-              << log2(cryptoContext->GetCryptoParameters()->GetElementParams()->GetModulus().ConvertToDouble())
-              << std::endl;
-
-    // Initialize Public Key Containers
-    KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
-    cryptoContext->EvalMultKeysGen(keyPair.secretKey);
-    Plaintext_3d ref_plain;
-    Plaintext_4d read_plain;
-    long slot_count = cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
-    long log_poly_modulus_size = (long)log2(slot_count);
-    cout << "log_slot_count = " << log_poly_modulus_size << endl;
-    vector<int32_t> rotList(log_poly_modulus_size);
-    for (size_t i = 0; i < rotList.size(); i++) {
-        rotList[i] = (1 << i);
-    }
-    cryptoContext->EvalRotateKeyGen(keyPair.secretKey, rotList);
-
-    cout << "=== Encode Refs ===" << endl;
-    TIC(t);
-    encode_refs(cryptoContext, refs_seq, ref_plain, K, B, slot_count);
-    processingTime = TOC(t);
-    std::cout << "Encoding ref time: " << processingTime << "ms" << std::endl;
-    cout << "=== Encode reads ===" << endl;
-    TIC(t);
-    encode_read(cryptoContext, reads_seq, read_plain, K, B, slot_count);
-    processingTime = TOC(t);
-    std::cout << "Encoding read time: " << processingTime << "ms" << std::endl;
-    TIC(t);
-    Ciphertext_4d ctxt_kmers;
-    cout << "=== Encrypt reads ===" << endl;
-    encrypt_reads(cryptoContext, keyPair, read_plain, ctxt_kmers, K, B, slot_count);
-    processingTime = TOC(t);
-    std::cout << "Encrypt Reads time: " << processingTime << "ms" << std::endl;
-    Ciphertext_3d ctxt_out;
-    cout << "=== Equality Test ===" << endl;
-    TIC(t);
-    eqaulity_test(cryptoContext, keyPair, ctxt_kmers, ref_plain, ctxt_out, K, B, log_poly_modulus_size, refs_seq, reads_seq);
-    processingTime = TOC(t);
-    std::cout << "EQtest time: " << processingTime << "ms" << std::endl;
-    cout << "=== Decrypt ===" << endl;
-    TIC(t);
-    decrypt_output(cryptoContext, keyPair, ctxt_out, refs_seq, reads_seq, K, B);
-    processingTime = TOC(t);
-    std::cout << "Decrypt time: " << processingTime << "ms" << std::endl;
-}
-
-void Test::kmerTables(PQuantParams &param) {
-    // string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
-    // string filename_read = "../dataset/five_genes/five_gene_reads.fa";
-    // string filename_ref = "../dataset/test/refs_toy.fa";
-    // string filename_read = "../dataset/test/reads_toy.fa";
-
+void Task::kmerTables(PQuantParams &param) {
     string filename_ref = param.filename_ref;
     string filename_read = param.filename_read;
     long K = param.k;
@@ -186,84 +98,51 @@ void Test::kmerTables(PQuantParams &param) {
     // }
 }
 
-void Test::plainExp() {
-    string filename_read = "../dataset/test/reads_toy.fa";
-    string filename_ref = "../dataset/test/refs_toy.fa";
-    long K = 8;
-    long B = 4;
 
-    // string filename_read = "../dataset/five_genes/five_gene_reads.fa";
-    // string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
-    // string filename_read = "../dataset/big/reads_GM12878_20_genes.fa";
-    // string filename_ref = "../dataset/big/exon_reference.fa";
-    // long K = 32;
-    // long B = 8;
-
-    std::srand(std::time(nullptr));
+void Task::kmerTable2(PQuantParams &param) {
+    string filename_ref = param.filename_ref;
+    string filename_read = param.filename_read;
+    long K = param.k;
 
     vector<Sequence> refs_seq;
+    vector<Sequence> reads_seq;
     readFastaFile(filename_ref, refs_seq);
+    readFastaFile(filename_read, reads_seq);
 
-    // Read read sequences from the file
-    vector<Sequence> reads_seq_vec;
-    readFastaFile(filename_read, reads_seq_vec);
+    KmerTable kmerTableRead;
+    KmerTable2 kmerTableRef;
+    computeKmerTable2(refs_seq, K, kmerTableRef);
+    // computeKmerTableForRead(reads_seq, K, kmerTableRead);
 
-    // print_sequences(refs_seq, reads_seq_vec);
+    cout << "geneNameIndex.size() = " << kmerTableRef.n_gene << endl;
+    cout << "count.size() = " << kmerTableRef.count.size() << endl;
+    cout << "entropy.size() = " << kmerTableRef.entropy.size() << endl;
 
-    unordered_map<int, int> check;
-    long total_n_read = 0;
-    for (auto &read_seq : reads_seq_vec) {
-        total_n_read += read_seq.getNumSeq();
-    }
-    long current_n = 0;
-    while (current_n < 5000) {
-        int random_index = std::rand() % reads_seq_vec.size();
-        Sequence read_seq = reads_seq_vec[random_index];
-        long numSeq = read_seq.getNumSeq();
-        string readGeneName = read_seq.getGeneName();
-        int random2 = std::rand() % numSeq;
-        string read = read_seq.getSeq(random2);
-        // for (size_t i = 0; i < numSeq; i++) {
-        vector<long> count_vec;
-        // string read = read_seq.getSeq(i);
-        cout << "(" << current_n << " / " << total_n_read << ") ";
-        current_n++;
-        cout << "read from " << readGeneName << " : " << read << endl;
-        cout << random2 << "th read from " << random_index << "th gene" << endl;
-        long match_sort = 0;
-        long max_count = 0;
-        long match_count = 0;
-        for (auto &refs : refs_seq) {
-            long count = count_matching(read, refs, K, B);
-            count_vec.push_back(count);
-            // cout << "   vs ref gene " << refs.getGeneName();
-            if (refs.getGeneName() == readGeneName) {
-                // cout << "(v)";
-                match_count = count;
-            }
-            // cout << endl;
-            // cout << "   match = " << count << endl;
-        }
-        sort(count_vec.rbegin(), count_vec.rend());
-        max_count = count_vec[0];
-        auto it = find(count_vec.begin(), count_vec.end(), match_count);
-        match_sort = distance(count_vec.begin(), it);
+    cout << "geneNameIndex.size() = " << kmerTableRead.geneNameIndex.size() << endl;
+    cout << "count.size() = " << kmerTableRead.count.size() << endl;
+    cout << "entropy.size() = " << kmerTableRead.entropy.size() << endl;
 
-        cout << "max, match, order = " << max_count << ", " << match_count << ", " << match_sort << endl;
-        if (match_count == 0) {
-            check[-1] += 1;
-        } else {
-            check[match_sort] += 1;
-        }
-        // }
-    }
-    cout << "check order" << endl;
-    for (auto &p : check) {
-        cout << "order " << p.first << " : " << p.second << endl;
-    }
+    cout << "=== kmerTableRef ===" << endl;
+    printKmerTable2(kmerTableRef, true);
+    // for (auto &p : kmerTableRef.count) {
+    //     cout << "kmer = " << p.first << " => count = ";
+    //     for (size_t i = 0; i < p.second.size(); i++) {
+    //         cout << p.second[i] << " ";
+    //     }
+    //     cout << endl;
+    // }
+    // for (auto &p : kmerTableRef.entropy) {
+    //     cout << "kmer = " << p.first << " => entropy = " << p.second << endl;
+    // }
+
+    // cout << "=== kmerTableRead ===" << endl;
+    // printKmerTable(kmerTableRead, false);
+    // for (auto &p : kmerTableRead.countRead) {
+    //     cout << "kmer = " << p.first << " => count = " << p.second << endl;
+    // }
 }
 
-void Test::bfvBenchmark(PQuantParams &param) {
+void Task::bfvBenchmark(PQuantParams &param) {
     TimeVar t;
     double processingTime(0.0);
 
@@ -389,7 +268,7 @@ void Test::bfvBenchmark(PQuantParams &param) {
     std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
 }
 
-void Test::encryptRead(PQuantParams &param) {
+void Task::run_all(PQuantParams &param) {
     // Read read sequences from the file
     vector<Sequence> reads_seq, refs_seq;
     readFastaFile(param.filename_read, reads_seq);
@@ -410,6 +289,7 @@ void Test::encryptRead(PQuantParams &param) {
     std::cout << "\np = " << cryptoContext->GetCryptoParameters()->GetPlaintextModulus() << std::endl;
     std::cout << "n = " << cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2
               << std::endl;
+    auto n = cryptoContext->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
     std::cout << "log2 q = "
               << log2(cryptoContext->GetCryptoParameters()->GetElementParams()->GetModulus().ConvertToDouble())
               << std::endl;
@@ -418,19 +298,29 @@ void Test::encryptRead(PQuantParams &param) {
     KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeysGen(keyPair.secretKey);
 
-    KmerTable kmerTableRef, kmerTableRead;
+    KmerTable2 kmerTableRef;
+    computeKmerTable2(refs_seq, param.k, kmerTableRef);
+    KmerTable kmerTableRead;
     computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
-    computeKmerTable(refs_seq, param.k, kmerTableRef);
 
-    printKmerTable(kmerTableRef, true);
+    if (param.verbose) {
+        printKmerTable2(kmerTableRef, true);
+        printKmerTable(kmerTableRead, false);
+    }
+
+    // remove all but one gene
+    kmerTableRef.n_gene = 1;
+    kmerTableRef.count.erase(std::next(kmerTableRef.count.begin()), kmerTableRef.count.end());
+
+    
     // check kmerTable lengths
     cout << endl;
     cout << endl;
     cout << "kmerTableRef.count.size() = " << kmerTableRef.count.size() << endl;
     cout << "kmerTableRead.countRead.size() = " << kmerTableRead.countRead.size() << endl;
     cout << "kmerTableRef.entropy.size() = " << kmerTableRef.entropy.size() << endl;
+    cout << "kmerRef.n_gene = " << kmerTableRef.n_gene << endl;
     cout << endl;
-
 
     auto start_time = std::chrono::high_resolution_clock::now();
     auto end_time = std::chrono::high_resolution_clock::now();
@@ -451,8 +341,11 @@ void Test::encryptRead(PQuantParams &param) {
     cout << endl;
     cout << " === run multCtxtByRef === " << endl;
     Ciphertext_2d ct_out;
-    // multCtxtByRef(ct_out, ct, pt_ref, cryptoContext);
-    multCtxtByKmerTableRef(ct_out, ct, kmerTableRef, param.k, cryptoContext);
+    if (param.serial) {
+        multCtxtByKmerTableRefFromSerial(ct_out, ct, kmerTableRef, param.k, cryptoContext, param.out_path);
+    } else {
+        multCtxtByKmerTableRef2(ct_out, ct, kmerTableRef, param.k, cryptoContext);
+    }
     cout << endl;
     cout << "ct_out.size() = " << ct_out.size() << endl;
     cout << endl;
@@ -463,10 +356,18 @@ void Test::encryptRead(PQuantParams &param) {
     start_time = std::chrono::high_resolution_clock::now();
     cout << endl;
     cout << " === run sumUpCtxt === " << endl;
-    Ciphertext_1d ct_sum(ct_out.size());
-    for (size_t i = 0; i < ct_out.size(); i++) {
-        sumUpCtxt(ct_sum[i], ct_out[i], cryptoContext);
+    Ciphertext_1d ct_sum;
+    if (param.serial) {
+        long n_gene = kmerTableRef.n_gene;
+        long n_ctxt = pow(4, param.k) / n;
+        sumUpCtxtFromSerial(ct_sum, n_gene, n_ctxt, cryptoContext, param.out_path);
+    } else {
+        ct_sum.resize(ct_out.size());
+        for (size_t i = 0; i < ct_out.size(); i++) {
+            sumUpCtxt(ct_sum[i], ct_out[i], cryptoContext);
+        }
     }
+    
     cout << endl;
     cout << endl;
     end_time = std::chrono::high_resolution_clock::now();
@@ -503,4 +404,25 @@ void Test::encryptRead(PQuantParams &param) {
     cout << "multCtxtByRef duration   = " << duration_mult << " s" << endl;
     cout << "sumUpCtxt duration       = " << duration_sum << " s" << endl;
     cout << "dec duration             = " << duration_dec << " s" << endl;
+}
+
+void Task::testReadJson(PQuantParams &param) {
+    // // Specify the path to your JSON file
+    // std::string filename = "../../pQuant_rust/kmer.json";
+    // std::ifstream file(filename);
+    // if (!file.is_open()) {
+    //     throw runtime_error("Error: Failed to open file " + filename);
+    // } else {
+    //     std::stringstream buffer;
+    //     buffer << file.rdbuf();
+    //     std::string jsonStr = buffer.str();
+
+    //     KmerTable kmerTable;
+    //     parseJson(jsonStr, kmerTable);
+    //     printKmerTable(kmerTable);
+    // }
+    
+
+    // // Print the contents of the class
+    // kmerTable.print();
 }

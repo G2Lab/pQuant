@@ -39,3 +39,4 @@ build/*
 openfhe/*
 dataset/*
 *.sh
+crypto/*

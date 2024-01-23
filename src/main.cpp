@@ -1,11 +1,9 @@
-#include "Functions.h"
-#include "PlainFunc.h"
-#include "Sequence.h"
 #include "cxxopts.hpp"
-#include "entropy/Entropy.h"
+#include "func/Sequence.h"
+#include "func/Entropy.h"
 #include "openfhe.h"
-#include "test/Test.h"
-#include "PQuantParams.h"
+#include "Task.h"
+#include "func/PQuantParams.h"
 #include <algorithm>
 #include <cstdlib>
 #include <ctime>
@@ -23,6 +21,10 @@ int main(int argc, char **argv) {
         ("k,kmer", "Param kmer", cxxopts::value<int>()->default_value("15"))
         ("v,verbose", "enable verbose", cxxopts::value<bool>()->default_value("false"))
         ("b,bar", "print progress bar", cxxopts::value<bool>()->default_value("false"))
+        ("s,serial", "serialize ciphertexts", cxxopts::value<bool>()->default_value("false"))
+        ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
+        ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
+        ("o,out", "output path", cxxopts::value<std::string>()->default_value("../crypto/ctxt/"))
         ("h,help", "Print usage")
     ;
 
@@ -35,33 +37,46 @@ int main(int argc, char **argv) {
       exit(0);
     }
 
-    string filename_read = datasetMap[result["data"].as<std::string>()].first;
-    string filename_ref = datasetMap[result["data"].as<std::string>()].second;
-
+    string filename_read, filename_ref;
+    if (result["gene"].as<std::string>().size() > 0 && result["read"].as<std::string>().size() > 0) {
+        filename_read = result["read"].as<std::string>();
+        filename_ref = result["gene"].as<std::string>();
+    } else if (result["data"].as<std::string>().size() > 0) {
+        string dataset = result["data"].as<std::string>();
+        filename_read = datasetMap[dataset].first;
+        filename_ref = datasetMap[dataset].second;
+    } else {
+        std::cout << "Please specify dataset or gene and read path" << std::endl;
+        exit(0);
+    }
+    
     int k = result["kmer"].as<int>();
     string target = result["target"].as<std::string>();
     bool progress_bar = result["bar"].as<bool>();
     bool verbose = result["verbose"].as<bool>();
+    bool serial = result["serial"].as<bool>();
+    string output_path = result["out"].as<std::string>();
 
-    PQuantParams param(target, filename_read, filename_ref, k, verbose, progress_bar);
+    PQuantParams param(target, filename_read, filename_ref, output_path, k, verbose, progress_bar, serial);
 
     param.print();
 
 
     if (target.compare("fasta") == 0) {
-        // filename_read = "../dataset/five_genes/five_gene_reads.fa";
-        // string filename_ref = "../dataset/five_genes/five_gene_reference.fa";
-        Test::testReadFastaFiles(filename_ref, filename_read);
-    } else if (target.compare("bfv") == 0) {
-        Test::previousAlgorithm();
+        Task::readFastaFiles(param);
     } else if (target.compare("kmer") == 0) {
-        Test::kmerTables(param);
-    } else if (target.compare("plain") == 0) {
-        Test::plainExp();
+        Task::kmerTables(param);
+    } else if (target.compare("table2") == 0) {
+        Task::kmerTable2(param);
     } else if (target.compare("bench") == 0) {
-        Test::bfvBenchmark(param);
-    } else if (target.compare("encread") == 0) {
-        Test::encryptRead(param);
+        Task::bfvBenchmark(param);
+    } else if (target.compare("all") == 0) {
+        Task::run_all(param);
+    } else if (target.compare("json") == 0) {
+        Task::testReadJson(param);
+    } else {
+        std::cout << "Invalid target algorithm" << std::endl;
+        exit(0);
     }
     return 0;
 }

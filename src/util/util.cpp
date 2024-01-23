@@ -26,7 +26,10 @@ std::string ElapsedTime(std::chrono::seconds secs) {
 }
 
 void print_progress_bar(std::string instruction, int iter, int total, std::chrono::time_point<std::chrono::high_resolution_clock> start_time, int bar_width, bool print) {
-    long divide = total < 100 ? 1 : total / 100; 
+    long divide = total < 100 ? 1 : total / 100;
+    if (iter == 0) {
+        std::cout << std::endl;
+    }
     if (print && (iter + 1) % divide == 0) {
         // Calculate progress and time
         double progress = (double)(iter + 1) / (double)total;
@@ -58,7 +61,9 @@ void print_progress_bar(std::string instruction, int iter, int total, std::chron
         cout << "Memory : " << (double) getMemoryUsage() / (1024.0 * 1024.0 * 1024.0) << " GB";
 
         std::cout.flush();
-
+    }
+    if (iter == total - 1) {
+        std::cout << std::endl;
     }
 }
 

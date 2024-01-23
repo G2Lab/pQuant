@@ -1,4 +1,4 @@
-#include "enc/Functions.h"
+#include "func/Functions.h"
 
 void printKmerTable(KmerTable &kmerTable, bool isRef) {
     if (isRef) {
@@ -16,6 +16,33 @@ void printKmerTable(KmerTable &kmerTable, bool isRef) {
             cout << " => entropy = " << kmerTable.entropy[p.first];
             cout << endl;
         }
+    } else {
+        cout << " KmerTable for read" << endl;
+        cout << "countRead.size() = " << kmerTable.countRead.size() << endl;
+        for (auto &p : kmerTable.countRead) {
+            cout << "kmer = " << p.first << " => count = " << p.second << endl;
+        }
+    }
+}
+
+void printKmerTable2(KmerTable2 &kmerTable, bool isRef) {
+    if (isRef) {
+        cout << " KmerTable for reference" << endl;
+        cout << "n_gene = " << kmerTable.n_gene << endl;
+        cout << "n_kmer_total = " << kmerTable.n_kmer_total << endl;
+
+        for (const auto& geneEntry : kmerTable.count) {
+           std::cout << "Gene: " << geneEntry.first << " (" << geneEntry.second.size() << " kmers)" << std::endl;
+        
+            for (const auto& kmerEntry : geneEntry.second) {
+                std::cout << "(" << kmerEntry.first << ", " << kmerEntry.second << ") ";
+            }
+            std::cout << std::endl;
+        }
+
+        // for (auto &p : kmerTable.entropy) {
+        //     cout << "kmer = " << p.first << " => entropy = " << p.second << endl;
+        // }
     } else {
         cout << " KmerTable for read" << endl;
         cout << "countRead.size() = " << kmerTable.countRead.size() << endl;
@@ -189,6 +216,147 @@ void multCtxtByKmerTableRef(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable 
     }
 }
 
+
+void multCtxtByKmerTableRef2(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable2 kmerTableRef, long K, CryptoContext<DCRTPoly> &cc) {
+    long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
+    long n_genes = kmerTableRef.n_gene;
+    long n_vec_per_gene = ceil(pow(4, K) / (double)n_slots);
+    ct_out.resize(n_genes);
+    
+    cout << "n_slots = " << n_slots << endl;
+    cout << "n_genes = " << n_genes << endl;
+    cout << "n_vec_per_gene = " << n_vec_per_gene << endl;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto table_time = std::chrono::high_resolution_clock::now();
+    auto table_duration = std::chrono::duration_cast<std::chrono::seconds>(table_time - start_time).count();
+
+    cout << "Ref Kmer Table generated" << endl;
+    cout << "encodeRefKmer table duration = " << table_duration << " s" << endl;
+    cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << endl;
+
+
+    for (int g = 0; g < n_genes; g++) {
+        // assert(ct.size() == pt_ref[g].size());
+        // multiply ciphertexts in ct with plaintexts in pt
+        // result is stored in ct_out
+        // ct_out[i] = ct[i] * pt[i]
+        vector<vector<int64_t>> plain_vec(n_vec_per_gene, vector<int64_t>(n_slots, 0));
+        Plaintext plain;
+        
+        map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
+        for (auto &kmerEntry: geneEntry) {
+            long num_vec = kmerEntry.first / n_slots;
+            long num_slot = kmerEntry.first % n_slots;
+            if (num_slot == 0) {
+                plain_vec[num_vec][num_slot] += kmerEntry.second;
+            } else {
+                plain_vec[num_vec][n_slots - num_slot] -= kmerEntry.second;
+            }
+        }
+        
+        ct_out[g].resize(ct.size());
+        for (size_t i = 0; i < ct.size(); i++) {
+            plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], plain);
+            ct_out[g][i] = cc->EvalMult(ct[i], plain);
+
+            // update progress bar
+            print_progress_bar("multCtxtByKmerTableRef", g * ct.size() + i, n_genes * ct.size(), start_time);
+        }
+        plain_vec.clear();
+    }
+}
+
+
+void multCtxtByKmerTableRefFromSerial(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable2 kmerTableRef, long K, CryptoContext<DCRTPoly> &cc, string out_path) {
+    long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
+    long n_genes = kmerTableRef.n_gene;
+    long n_vec_per_gene = ceil(pow(4, K) / (double)n_slots);
+    ct_out.resize(n_genes);
+    
+    cout << "n_slots = " << n_slots << endl;
+    cout << "n_genes = " << n_genes << endl;
+    cout << "n_vec_per_gene = " << n_vec_per_gene << endl;
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    auto table_time = std::chrono::high_resolution_clock::now();
+    auto table_duration = std::chrono::duration_cast<std::chrono::seconds>(table_time - start_time).count();
+
+    cout << "Ref Kmer Table generated" << endl;
+    cout << "encodeRefKmer table duration = " << table_duration << " s" << endl;
+    cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << endl;
+
+    std::string DATAFOLDER = "../crypto/ctxt";
+    if (out_path != "") {
+        DATAFOLDER = out_path;
+    }
+
+
+    for (int g = 0; g < n_genes; g++) {
+        // assert(ct.size() == pt_ref[g].size());
+        // multiply ciphertexts in ct with plaintexts in pt
+        // result is stored in ct_out
+        // ct_out[i] = ct[i] * pt[i]
+        vector<vector<int64_t>> plain_vec(n_vec_per_gene, vector<int64_t>(n_slots, 0));
+        Plaintext plain;
+        
+        map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
+        for (auto &kmerEntry: geneEntry) {
+            long num_vec = kmerEntry.first / n_slots;
+            long num_slot = kmerEntry.first % n_slots;
+            if (num_slot == 0) {
+                plain_vec[num_vec][num_slot] += kmerEntry.second;
+            } else {
+                plain_vec[num_vec][n_slots - num_slot] -= kmerEntry.second;
+            }
+        }
+        string path = DATAFOLDER + "/gene" + to_string(g);
+        fs::create_directory(DATAFOLDER);
+        fs::create_directory(path);
+        // ct_out[g].resize(ct.size());
+        for (size_t i = 0; i < ct.size(); i++) {
+            plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], plain);
+            
+            if (!Serial::SerializeToFile(path + "/ctxt" + to_string(i) + ".txt", ctxt, SerType::BINARY)) {
+                std::cerr << "Error writing serialization of ciphertext 1 to ciphertext1.txt" << std::endl;
+                return;
+            }
+            // cout << "Ciphertext " << i << " serialized" << endl;
+            // ct_out[g][i] = cc->EvalMult(ct[i], plain);
+
+            // update progress bar
+            print_progress_bar("multCtxtByKmerTableRefSerial", g * ct.size() + i, n_genes * ct.size(), start_time);
+        }
+        plain_vec.clear();
+    }
+
+    auto file_size_in_folder = 0.;
+    auto num_files = 0;
+
+    try {
+        for (int gene_index = 0; n_genes < 10; ++gene_index) {
+            // Construct the folder path dynamically based on the gene index
+            std::string data_folder = DATAFOLDER + "/gene" + std::to_string(gene_index);
+
+            for (const auto& entry : fs::directory_iterator(data_folder)) {
+                if (entry.is_regular_file()) {
+                    file_size_in_folder += fs::file_size(entry);
+                    num_files++;
+                }
+            }
+        }
+    } catch (const std::exception& ex) {
+        std::cerr << "Error: " << ex.what() << std::endl;
+    }
+
+    cout << endl;
+    cout << "Total size in folder " << DATAFOLDER << " = " << file_size_in_folder / (1024. * 1024. * 1024.) << " GB" << endl;
+    cout << "Number of files in folder " << DATAFOLDER << " = " << num_files << endl;
+
+}
+
 void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair) {
     // auto start_time = std::chrono::high_resolution_clock::now();
 
@@ -204,12 +372,42 @@ void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTP
 
 void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DCRTPoly> &cc) {
     // auto start_time = std::chrono::high_resolution_clock::now();
-
+    std::string CTXT_FOLDER = "../crypto/ctxt";
+    
     ct = ct_vec[0];
     for (size_t i = 1; i < ct_vec.size(); i++) {
         ct = cc->EvalAdd(ct, ct_vec[i]);
 
         // update progress bar
         // print_progress_bar(i, ct_vec.size(), start_time);
+    }
+}
+
+
+void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, CryptoContext<DCRTPoly> &cc, string out_path) {
+    // auto start_time = std::chrono::high_resolution_clock::now();
+    std::string CTXT_FOLDER = "../crypto/ctxt";
+    if (out_path != "") {
+        CTXT_FOLDER = out_path;
+    }
+    
+    for (size_t g = 0; g < n_gene; g++) {
+        string path = CTXT_FOLDER + "/gene" + to_string(g);
+        Ciphertext<DCRTPoly> ct;
+        if (Serial::DeserializeFromFile(path + "/" + "ctxt0.txt", ct, SerType::BINARY) == false) {
+            std::cerr << "Could not read the ciphertext" << std::endl;
+            return;
+        }
+        for (size_t i = 1; i < n_ctxt; i++) {
+            Ciphertext<DCRTPoly> ct_load;
+            if (Serial::DeserializeFromFile(path + "/" + "ctxt" + to_string(i) + ".txt", ct_load, SerType::BINARY) == false) {
+                std::cerr << "Could not read the ciphertext" << std::endl;
+                return;
+            }
+            ct = cc->EvalAdd(ct, ct_load);
+            // update progress bar
+            // print_progress_bar(i, ct_vec.size(), start_time);
+        }
+        ct_out.push_back(ct);
     }
 }

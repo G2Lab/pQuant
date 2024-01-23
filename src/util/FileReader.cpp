@@ -55,8 +55,10 @@ void readFastaFile(const string& filename, vector<Sequence>& seq_vec) {
     // Add the final sequence to the appropriate Sequence object
     if (!exon_seq.empty()) {
         auto& seq = gene_to_seq[gene_name];
-        seq.checkAddSeq(exon_seq[0], gene_name);
-        for (size_t i = 1; i < exon_seq.size(); i++) {
+        if (seq.getGeneName() == "NA") {
+            seq.setGeneName(gene_name);
+        }
+        for (size_t i = 0; i < exon_seq.size(); i++) {
             seq.addSeq(exon_seq[i]);
         }
     }
@@ -69,3 +71,33 @@ void readFastaFile(const string& filename, vector<Sequence>& seq_vec) {
     file.close();
 }
 
+void readFastQFile(const string& filename, vector<Sequence>& seq_vec) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        throw runtime_error("Error: Failed to open file " + filename);
+    }
+
+    string line;
+    int line_number = 0;
+    vector<string> exon_seq;
+
+    // Keep track of Sequence objects for each gene name
+    unordered_map<string, Sequence> gene_to_seq;
+
+    while (getline(file, line)) {
+        if (line.empty()) {
+            continue;
+        }
+
+        line_number++;
+
+        if (line_number % 4 == 2) {
+            auto& seq = gene_to_seq[0];
+            seq.setGeneName(0);
+            seq.addSeq(line);
+
+        }
+    }
+
+    file.close();
+}

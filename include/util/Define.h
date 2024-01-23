@@ -25,5 +25,14 @@ typedef struct KmerTable {
     map<long, float> entropy;
 } KmerTable;
 
+typedef struct KmerTable2 {
+    long K;
+    size_t n_gene;
+    size_t n_kmer_total;
+    vector<string> geneNameIndex;
+    map<size_t, map<size_t, size_t>> count; // gene, [kmer, num]
+    map<size_t, size_t> countRead; // [kmer, num]
+    map<size_t, float> entropy; // [kmer, entropy]
+} KmerTable2;
 
 #endif
