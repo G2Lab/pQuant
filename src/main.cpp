@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
         ("o,out", "output path", cxxopts::value<std::string>()->default_value("../crypto/ctxt/"))
+        ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("h,help", "Print usage")
     ;
 
@@ -37,42 +38,20 @@ int main(int argc, char **argv) {
       exit(0);
     }
 
-    string filename_read, filename_ref;
-    if (result["gene"].as<std::string>().size() > 0 && result["read"].as<std::string>().size() > 0) {
-        filename_read = result["read"].as<std::string>();
-        filename_ref = result["gene"].as<std::string>();
-    } else if (result["data"].as<std::string>().size() > 0) {
-        string dataset = result["data"].as<std::string>();
-        filename_read = datasetMap[dataset].first;
-        filename_ref = datasetMap[dataset].second;
-    } else {
-        std::cout << "Please specify dataset or gene and read path" << std::endl;
-        exit(0);
-    }
-    
-    int k = result["kmer"].as<int>();
-    string target = result["target"].as<std::string>();
-    bool progress_bar = result["bar"].as<bool>();
-    bool verbose = result["verbose"].as<bool>();
-    bool serial = result["serial"].as<bool>();
-    string output_path = result["out"].as<std::string>();
-
-    PQuantParams param(target, filename_read, filename_ref, output_path, k, verbose, progress_bar, serial);
+    PQuantParams param(result);
 
     param.print();
 
 
-    if (target.compare("fasta") == 0) {
+    if (param.target.compare("fasta") == 0) {
         Task::readFastaFiles(param);
-    } else if (target.compare("kmer") == 0) {
-        Task::kmerTables(param);
-    } else if (target.compare("table2") == 0) {
-        Task::kmerTable2(param);
-    } else if (target.compare("bench") == 0) {
+    } else if (param.target.compare("table2") == 0) {
+        Task::testKmerTable(param);
+    } else if (param.target.compare("bench") == 0) {
         Task::bfvBenchmark(param);
-    } else if (target.compare("all") == 0) {
+    } else if (param.target.compare("all") == 0) {
         Task::run_all(param);
-    } else if (target.compare("json") == 0) {
+    } else if (param.target.compare("json") == 0) {
         Task::testReadJson(param);
     } else {
         std::cout << "Invalid target algorithm" << std::endl;

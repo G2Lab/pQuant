@@ -1,15 +1,25 @@
 #include "func/PQuantParams.h"
 
-
-PQuantParams::PQuantParams(std::string target, std::string filename_read, std::string filename_ref, std::string out_path, long k, bool verbose, bool progress_bar, bool serial) {
-    this->k = k;
-    this->filename_read = filename_read;
-    this->filename_ref = filename_ref;
-    this->out_path = out_path;
-    this->verbose = verbose;
-    this->progress_bar = progress_bar;
-    this->target = target;
-    this->serial = serial;
+PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
+    if (result["gene"].as<std::string>().size() > 0 && result["read"].as<std::string>().size() > 0) {
+        this->filename_read = result["read"].as<std::string>();
+        this->filename_ref = result["gene"].as<std::string>();
+    } else if (result["data"].as<std::string>().size() > 0) {
+        std::string dataset = result["data"].as<std::string>();
+        this->filename_read = datasetMap[dataset].first;
+        this->filename_ref = datasetMap[dataset].second;
+    } else {
+        std::cout << "Please specify dataset or gene and read path" << std::endl;
+        exit(0);
+    }
+    
+    this->k = result["kmer"].as<int>();
+    this->target = result["target"].as<std::string>();
+    this->progress_bar = result["bar"].as<bool>();
+    this->verbose = result["verbose"].as<bool>();
+    this->serial = result["serial"].as<bool>();
+    this->out_path = result["out"].as<std::string>();
+    this->debug_n_gene = result["debug_n_gene"].as<int>();
 }
 
 void PQuantParams::print() {

@@ -101,3 +101,51 @@ void readFastQFile(const string& filename, vector<Sequence>& seq_vec) {
 
     file.close();
 }
+
+using json = nlohmann::json;
+
+void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
+    std::ifstream file(jsonFile);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << jsonFile << std::endl;
+        return;
+    }
+
+    json jsonData;
+    try {
+        file >> jsonData;
+    } catch (const std::exception& e) {
+        std::cerr << "Error parsing JSON: " << e.what() << std::endl;
+        return;
+    }
+    
+    // Extract gene_name_vec
+    if (jsonData.contains("gene_name_vec")) {
+        kmerTable.geneNameIndex = jsonData["gene_name_vec"].get<std::vector<std::string>>();
+    }
+
+    kmerTable.n_gene = kmerTable.geneNameIndex.size();
+    // for (size_t i = 0; i < kmerTable.n_gene; i++) {
+    //     kmerTable.count[i] = {};
+    // }
+    // Extract kmer_matrix
+    if (jsonData.contains("kmer_matrix")) {
+        for (json::iterator it = jsonData["kmer_matrix"].begin(); it != jsonData["kmer_matrix"].end(); ++it) {
+            for (json::iterator it2 = it.value().begin(); it2 != it.value().end(); ++it2) {
+                kmerTable.count[stoi(it2.key())][stoi(it.key())] = it2.value();
+            }
+            cout << endl;
+            // kmerTable.count.insert(make_pair(stoi(it.key()), kmer_for_gene));
+        }
+    }
+
+    // Extract kmer_entropy
+    kmerTable.n_kmer_total = 0;
+    if (jsonData.contains("kmer_entropy")) {
+        for (json::iterator it = jsonData["kmer_entropy"].begin(); it != jsonData["kmer_entropy"].end(); ++it) {
+            cout << it.key() << " : " << it.value() << endl;
+            kmerTable.entropy.insert(make_pair(stoi(it.key()), it.value()));
+            kmerTable.n_kmer_total += 1;
+        }
+    }
+}

@@ -76,24 +76,24 @@ endif()
 # include_directories(${googletest_SOURCE_DIR}/googlemock/include)
 # include_directories(${googlebenchmark_SOURCE_DIR}/include)
 
-# include(FetchContent)
-# FetchContent_Declare(
-#     nlohman_json 3.2.0
-#     GIT_REPOSITORY https://github.com/nlohmann/json.git
-# )
-# FetchContent_MakeAvailable(nlohman_json)
+include(FetchContent)
+FetchContent_Declare(
+    nlohman_json 3.2.0
+    GIT_REPOSITORY https://github.com/nlohmann/json.git
+)
+FetchContent_MakeAvailable(nlohman_json)
 
 include_directories(include)
 include_directories(include/func)
 include_directories(include/util)
-# include_directories(${nlohmann_json_SOURCE_DIR}/include/nlohmann)
+include_directories(${nlohmann_json_SOURCE_DIR}/include/nlohmann)
 
 file(GLOB_RECURSE SRC_FILES src/*.cpp)
 list(FILTER SRC_FILES EXCLUDE REGEX "src/main.cpp")
 file(GLOB_RECURSE TEST_FILES test/*.cpp)
 
 add_executable(pquant src/main.cpp ${SRC_FILES})
-# target_link_libraries(pquant PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(pquant PRIVATE nlohmann_json::nlohmann_json)
 
 # add_executable(test_all ${TEST_FILES} ${SRC_FILES})
 # target_link_libraries(test_all gtest gtest_main)

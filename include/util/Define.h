@@ -16,16 +16,7 @@ typedef vector<Ciphertext_1d> Ciphertext_2d;
 typedef vector<Ciphertext_2d> Ciphertext_3d;
 typedef vector<Ciphertext_3d> Ciphertext_4d;
 
-
 typedef struct KmerTable {
-    long K;
-    vector<string> geneNameIndex;
-    map<long, vector<long>> count;
-    map<long, long> countRead;
-    map<long, float> entropy;
-} KmerTable;
-
-typedef struct KmerTable2 {
     long K;
     size_t n_gene;
     size_t n_kmer_total;
@@ -33,6 +24,6 @@ typedef struct KmerTable2 {
     map<size_t, map<size_t, size_t>> count; // gene, [kmer, num]
     map<size_t, size_t> countRead; // [kmer, num]
     map<size_t, float> entropy; // [kmer, entropy]
-} KmerTable2;
+} KmerTable;
 
 #endif

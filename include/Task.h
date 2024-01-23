@@ -17,9 +17,7 @@ class Task {
 public:
     static void readFastaFiles(PQuantParams &param);
 
-    static void kmerTables(PQuantParams &param);
-
-    static void kmerTable2(PQuantParams &param);
+    static void testKmerTable(PQuantParams &param);
     
     static void bfvBenchmark(PQuantParams &param);
 

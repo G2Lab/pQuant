@@ -56,7 +56,7 @@ void Task::readFastaFiles(PQuantParams &param) {
     cout << "avg = " << avg / total_n_ref << endl;
 }
 
-void Task::kmerTables(PQuantParams &param) {
+void Task::testKmerTable(PQuantParams &param) {
     string filename_ref = param.filename_ref;
     string filename_read = param.filename_read;
     long K = param.k;
@@ -66,53 +66,19 @@ void Task::kmerTables(PQuantParams &param) {
     readFastaFile(filename_ref, refs_seq);
     readFastaFile(filename_read, reads_seq);
 
-    KmerTable kmerTableRef, kmerTableRead;
+    cout << "check reads_Seq" << endl;
+    for (size_t i = 0; i < reads_seq.size(); i++) {
+        cout << "reads_seq[" << i << "].getGeneName() = " << reads_seq[i].getGeneName() << endl;
+        cout << "reads_seq[" << i << "].getNumSeq() = " << reads_seq[i].getNumSeq() << endl;
+        for (size_t j = 0; j < static_cast<size_t>(reads_seq[i].getNumSeq()); j++) {
+            cout << "reads_seq[" << i << "].getSeq(" << j << ") = " << reads_seq[i].getSeq(j) << endl;
+        }
+    }
+
+    KmerTable kmerTableRef;
+    KmerTable kmerTableRead;
     computeKmerTable(refs_seq, K, kmerTableRef);
     computeKmerTableForRead(reads_seq, K, kmerTableRead);
-
-    cout << "geneNameIndex.size() = " << kmerTableRef.geneNameIndex.size() << endl;
-    cout << "count.size() = " << kmerTableRef.count.size() << endl;
-    cout << "entropy.size() = " << kmerTableRef.entropy.size() << endl;
-
-    cout << "geneNameIndex.size() = " << kmerTableRead.geneNameIndex.size() << endl;
-    cout << "count.size() = " << kmerTableRead.count.size() << endl;
-    cout << "entropy.size() = " << kmerTableRead.entropy.size() << endl;
-
-    cout << "=== kmerTableRef ===" << endl;
-    printKmerTable(kmerTableRef, true);
-    // for (auto &p : kmerTableRef.count) {
-    //     cout << "kmer = " << p.first << " => count = ";
-    //     for (size_t i = 0; i < p.second.size(); i++) {
-    //         cout << p.second[i] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // for (auto &p : kmerTableRef.entropy) {
-    //     cout << "kmer = " << p.first << " => entropy = " << p.second << endl;
-    // }
-
-    cout << "=== kmerTableRead ===" << endl;
-    printKmerTable(kmerTableRead, false);
-    // for (auto &p : kmerTableRead.countRead) {
-    //     cout << "kmer = " << p.first << " => count = " << p.second << endl;
-    // }
-}
-
-
-void Task::kmerTable2(PQuantParams &param) {
-    string filename_ref = param.filename_ref;
-    string filename_read = param.filename_read;
-    long K = param.k;
-
-    vector<Sequence> refs_seq;
-    vector<Sequence> reads_seq;
-    readFastaFile(filename_ref, refs_seq);
-    readFastaFile(filename_read, reads_seq);
-
-    KmerTable kmerTableRead;
-    KmerTable2 kmerTableRef;
-    computeKmerTable2(refs_seq, K, kmerTableRef);
-    // computeKmerTableForRead(reads_seq, K, kmerTableRead);
 
     cout << "geneNameIndex.size() = " << kmerTableRef.n_gene << endl;
     cout << "count.size() = " << kmerTableRef.count.size() << endl;
@@ -123,23 +89,10 @@ void Task::kmerTable2(PQuantParams &param) {
     cout << "entropy.size() = " << kmerTableRead.entropy.size() << endl;
 
     cout << "=== kmerTableRef ===" << endl;
-    printKmerTable2(kmerTableRef, true);
-    // for (auto &p : kmerTableRef.count) {
-    //     cout << "kmer = " << p.first << " => count = ";
-    //     for (size_t i = 0; i < p.second.size(); i++) {
-    //         cout << p.second[i] << " ";
-    //     }
-    //     cout << endl;
-    // }
-    // for (auto &p : kmerTableRef.entropy) {
-    //     cout << "kmer = " << p.first << " => entropy = " << p.second << endl;
-    // }
+    printKmerTable(kmerTableRef, true);
 
-    // cout << "=== kmerTableRead ===" << endl;
-    // printKmerTable(kmerTableRead, false);
-    // for (auto &p : kmerTableRead.countRead) {
-    //     cout << "kmer = " << p.first << " => count = " << p.second << endl;
-    // }
+    cout << "=== kmerTableRead ===" << endl;
+    printKmerTable(kmerTableRead, false);
 }
 
 void Task::bfvBenchmark(PQuantParams &param) {
@@ -298,19 +251,24 @@ void Task::run_all(PQuantParams &param) {
     KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeysGen(keyPair.secretKey);
 
-    KmerTable2 kmerTableRef;
-    computeKmerTable2(refs_seq, param.k, kmerTableRef);
+    KmerTable kmerTableRef;
+    computeKmerTable(refs_seq, param.k, kmerTableRef);
     KmerTable kmerTableRead;
     computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
 
     if (param.verbose) {
-        printKmerTable2(kmerTableRef, true);
+        printKmerTable(kmerTableRef, true);
         printKmerTable(kmerTableRead, false);
     }
 
-    // remove all but one gene
-    kmerTableRef.n_gene = 1;
-    kmerTableRef.count.erase(std::next(kmerTableRef.count.begin()), kmerTableRef.count.end());
+    // remove all but x gene (debugging)
+    if (param.debug_n_gene > 0) {
+        kmerTableRef.n_gene = param.debug_n_gene;
+        // erase all but debug_n_gene
+        kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.debug_n_gene),
+                                         kmerTableRef.geneNameIndex.end());
+    }
+    
 
     
     // check kmerTable lengths
@@ -407,22 +365,18 @@ void Task::run_all(PQuantParams &param) {
 }
 
 void Task::testReadJson(PQuantParams &param) {
-    // // Specify the path to your JSON file
-    // std::string filename = "../../pQuant_rust/kmer.json";
-    // std::ifstream file(filename);
-    // if (!file.is_open()) {
-    //     throw runtime_error("Error: Failed to open file " + filename);
-    // } else {
-    //     std::stringstream buffer;
-    //     buffer << file.rdbuf();
-    //     std::string jsonStr = buffer.str();
+    // Specify the path to your JSON file
+    std::string filename = "../kmer.json";
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw runtime_error("Error: Failed to open file " + filename);
+    } else {
+        std::stringstream buffer;
+        buffer << file.rdbuf();
+        std::string jsonStr = buffer.str();
 
-    //     KmerTable kmerTable;
-    //     parseJson(jsonStr, kmerTable);
-    //     printKmerTable(kmerTable);
-    // }
-    
-
-    // // Print the contents of the class
-    // kmerTable.print();
+        KmerTable kmerTable;
+        parseJson(filename, kmerTable);
+        printKmerTable(kmerTable, true);
+    }
 }

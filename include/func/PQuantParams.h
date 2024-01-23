@@ -5,7 +5,7 @@
 #include <string>
 #include <algorithm>
 #include <unordered_map>
-
+#include "cxxopts.hpp"
 
 static  std::unordered_map<std::string, std::pair<const char*, const char*>> datasetMap = {
         {"five", { "../dataset/five_genes/five_gene_reads.fa", "../dataset/five_genes/five_gene_reference.fa"}},
@@ -22,11 +22,14 @@ class PQuantParams {
     std::string filename_ref;
     std::string out_path;
     bool verbose;
-    bool progress_bar;
     bool serial;
     std::string target;
 
-    PQuantParams(std::string target, std::string filename_read, std::string filename_ref, std::string out_path, long k, bool verbose, bool progress_bar, bool serial);
+    //debug
+    int debug_n_gene;
+    bool progress_bar;
+
+    PQuantParams(cxxopts::ParseResult &result);
 
     void print();
 };
