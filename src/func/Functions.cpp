@@ -192,7 +192,7 @@ void multCtxtByKmerTableRef2(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable
 }
 
 
-void multCtxtByKmerTableRefFromSerial(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, long K, CryptoContext<DCRTPoly> &cc, string out_path) {
+void multCtxtByKmerTableRefFromSerial(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, long K, CryptoContext<DCRTPoly> &cc, string path_output) {
     long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
     long n_genes = kmerTableRef.n_gene;
     long n_vec_per_gene = ceil(pow(4, K) / (double)n_slots);
@@ -211,8 +211,8 @@ void multCtxtByKmerTableRefFromSerial(Ciphertext_2d &ct_out, Ciphertext_1d &ct, 
     std::cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << std::endl;
 
     std::string DATAFOLDER = "../crypto/ctxt";
-    if (out_path != "") {
-        DATAFOLDER = out_path;
+    if (path_output != "") {
+        DATAFOLDER = path_output;
     }
 
 
@@ -307,11 +307,11 @@ void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DC
 }
 
 
-void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, CryptoContext<DCRTPoly> &cc, string out_path) {
+void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, CryptoContext<DCRTPoly> &cc, string path_output) {
     // auto start_time = std::chrono::high_resolution_clock::now();
     std::string CTXT_FOLDER = "../crypto/ctxt";
-    if (out_path != "") {
-        CTXT_FOLDER = out_path;
+    if (path_output != "") {
+        CTXT_FOLDER = path_output;
     }
     
     for (size_t g = 0; g < n_gene; g++) {

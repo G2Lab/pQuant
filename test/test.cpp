@@ -14,15 +14,15 @@ TEST(AddFunctionTest, PositiveNumbers) {
 }
 
 TEST(FileReaderTest, ReadFastaFile) {
-    std::string filename_read = "../dataset/test/reads_toy.fa";
-    std::string filename_ref = "../dataset/test/refs_toy.fa";
+    std::string path_filename_read = "../dataset/test/reads_toy.fa";
+    std::string path_filename_ref = "../dataset/test/refs_toy.fa";
     // Read reference sequences from the file
     std::vector<Sequence> refs_seq;
-    readFastaFile(filename_ref, refs_seq);
+    readFastaFile(path_filename_ref, refs_seq);
 
     // Read read sequences from the file
     vector<Sequence> reads_seq;
-    readFastaFile(filename_read, reads_seq);
+    readFastaFile(path_filename_read, reads_seq);
     // Read reference sequences from the file
 
     EXPECT_EQ(refs_seq.size(), 3);

@@ -18,9 +18,10 @@ static  std::unordered_map<std::string, std::pair<const char*, const char*>> dat
 class PQuantParams {
     public:
     long k;
-    std::string filename_read;
-    std::string filename_ref;
-    std::string out_path;
+    std::string path_filename_read;
+    std::string path_filename_ref;
+    std::string path_output;
+    std::string path_kmer_matrix;
     bool verbose;
     bool serial;
     std::string target;

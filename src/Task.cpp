@@ -3,11 +3,11 @@
 void Task::readFastaFiles(PQuantParams &param) {
     // Read reference sequences from the file
     vector<Sequence> refs_seq;
-    readFastaFile(param.filename_read, refs_seq);
+    readFastaFile(param.path_filename_read, refs_seq);
 
     // Read read sequences from the file
     vector<Sequence> reads_seq;
-    readFastaFile(param.filename_ref, reads_seq);
+    readFastaFile(param.path_filename_ref, reads_seq);
 
     long total_n_ref = 0;
     long n_gene_ref = 0;
@@ -19,7 +19,7 @@ void Task::readFastaFiles(PQuantParams &param) {
     long avg = 0;
     // Print some information about the reference sequences
     cout << "Reference sequences:" << endl;
-    cout << param.filename_ref << endl;
+    cout << param.path_filename_ref << endl;
     for (auto &ref_seq : refs_seq) {
         cout << "Gene name: " << ref_seq.getGeneName() << ", Num seq: " << ref_seq.getNumSeq() << endl;
         n_gene_ref += 1;
@@ -37,7 +37,7 @@ void Task::readFastaFiles(PQuantParams &param) {
 
     // Print some information about the read sequences
     cout << "Read sequences:" << endl;
-    cout << param.filename_read << endl;
+    cout << param.path_filename_read << endl;
     for (auto &read_seq : reads_seq) {
         // cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
         n_gene_read += 1;
@@ -57,14 +57,14 @@ void Task::readFastaFiles(PQuantParams &param) {
 }
 
 void Task::testKmerTable(PQuantParams &param) {
-    string filename_ref = param.filename_ref;
-    string filename_read = param.filename_read;
+    string path_filename_ref = param.path_filename_ref;
+    string path_filename_read = param.path_filename_read;
     long K = param.k;
 
     vector<Sequence> refs_seq;
     vector<Sequence> reads_seq;
-    readFastaFile(filename_ref, refs_seq);
-    readFastaFile(filename_read, reads_seq);
+    readFastaFile(path_filename_ref, refs_seq);
+    readFastaFile(path_filename_read, reads_seq);
 
     cout << "check reads_Seq" << endl;
     for (size_t i = 0; i < reads_seq.size(); i++) {
@@ -222,11 +222,6 @@ void Task::bfvBenchmark(PQuantParams &param) {
 }
 
 void Task::run_all(PQuantParams &param) {
-    // Read read sequences from the file
-    vector<Sequence> reads_seq, refs_seq;
-    readFastaFile(param.filename_read, reads_seq);
-    readFastaFile(param.filename_ref, refs_seq);
-
     CCParams<CryptoContextBFVRNS> parameters;
     parameters.SetPlaintextModulus(65537);
     parameters.SetMultiplicativeDepth(1);
@@ -252,12 +247,24 @@ void Task::run_all(PQuantParams &param) {
     cryptoContext->EvalMultKeysGen(keyPair.secretKey);
 
     KmerTable kmerTableRef;
-    computeKmerTable(refs_seq, param.k, kmerTableRef);
-    KmerTable kmerTableRead;
-    computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
-
+    if (param.path_kmer_matrix.size() > 0) {
+        parseJson(param.path_kmer_matrix, kmerTableRef);
+    } else {
+        vector<Sequence> refs_seq;
+        readFastaFile(param.path_filename_ref, refs_seq);
+        computeKmerTable(refs_seq, param.k, kmerTableRef);
+        refs_seq.clear();
+    }
     if (param.verbose) {
         printKmerTable(kmerTableRef, true);
+    }
+    
+    vector<Sequence> reads_seq;
+    readFastaFile(param.path_filename_read, reads_seq);
+    KmerTable kmerTableRead;
+    computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
+    reads_seq.clear();
+    if (param.verbose) {
         printKmerTable(kmerTableRead, false);
     }
 
@@ -300,7 +307,7 @@ void Task::run_all(PQuantParams &param) {
     cout << " === run multCtxtByRef === " << endl;
     Ciphertext_2d ct_out;
     if (param.serial) {
-        multCtxtByKmerTableRefFromSerial(ct_out, ct, kmerTableRef, param.k, cryptoContext, param.out_path);
+        multCtxtByKmerTableRefFromSerial(ct_out, ct, kmerTableRef, param.k, cryptoContext, param.path_output);
     } else {
         multCtxtByKmerTableRef2(ct_out, ct, kmerTableRef, param.k, cryptoContext);
     }
@@ -318,7 +325,7 @@ void Task::run_all(PQuantParams &param) {
     if (param.serial) {
         long n_gene = kmerTableRef.n_gene;
         long n_ctxt = pow(4, param.k) / n;
-        sumUpCtxtFromSerial(ct_sum, n_gene, n_ctxt, cryptoContext, param.out_path);
+        sumUpCtxtFromSerial(ct_sum, n_gene, n_ctxt, cryptoContext, param.path_output);
     } else {
         ct_sum.resize(ct_out.size());
         for (size_t i = 0; i < ct_out.size(); i++) {
@@ -366,15 +373,11 @@ void Task::run_all(PQuantParams &param) {
 
 void Task::testReadJson(PQuantParams &param) {
     // Specify the path to your JSON file
-    std::string filename = "../kmer.json";
+    std::string filename = "../../pQuant_rust/kmer.json";
     std::ifstream file(filename);
     if (!file.is_open()) {
         throw runtime_error("Error: Failed to open file " + filename);
     } else {
-        std::stringstream buffer;
-        buffer << file.rdbuf();
-        std::string jsonStr = buffer.str();
-
         KmerTable kmerTable;
         parseJson(filename, kmerTable);
         printKmerTable(kmerTable, true);

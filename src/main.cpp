@@ -24,7 +24,8 @@ int main(int argc, char **argv) {
         ("s,serial", "serialize ciphertexts", cxxopts::value<bool>()->default_value("false"))
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
-        ("o,out", "output path", cxxopts::value<std::string>()->default_value("../crypto/ctxt/"))
+        ("o,out", "output path", cxxopts::value<std::string>()->default_value("../slurm_save/ctxt/"))
+        ("m,kmer_matrix", "load kmer matrix from file path", cxxopts::value<std::string>()->default_value(""))
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("h,help", "Print usage")
     ;

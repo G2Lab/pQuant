@@ -134,8 +134,6 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
             for (json::iterator it2 = it.value().begin(); it2 != it.value().end(); ++it2) {
                 kmerTable.count[stoi(it2.key())][stoi(it.key())] = it2.value();
             }
-            cout << endl;
-            // kmerTable.count.insert(make_pair(stoi(it.key()), kmer_for_gene));
         }
     }
 
@@ -143,7 +141,6 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
     kmerTable.n_kmer_total = 0;
     if (jsonData.contains("kmer_entropy")) {
         for (json::iterator it = jsonData["kmer_entropy"].begin(); it != jsonData["kmer_entropy"].end(); ++it) {
-            cout << it.key() << " : " << it.value() << endl;
             kmerTable.entropy.insert(make_pair(stoi(it.key()), it.value()));
             kmerTable.n_kmer_total += 1;
         }
