@@ -20,10 +20,8 @@ class PQuantParams {
     long k;
     std::string path_filename_read;
     std::string path_filename_ref;
-    std::string path_output;
     std::string path_kmer_matrix;
     bool verbose;
-    bool serial;
     std::string target;
 
     //debug

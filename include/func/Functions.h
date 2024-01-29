@@ -21,9 +21,6 @@
 #include "scheme/bfvrns/bfvrns-ser.h"
 #include "func/PQuantParams.h"
 
-#include <filesystem>
-namespace fs = std::filesystem;
-
 using namespace std;
 using namespace lbcrypto;
 

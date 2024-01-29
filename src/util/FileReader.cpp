@@ -125,14 +125,17 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
     }
 
     kmerTable.n_gene = kmerTable.geneNameIndex.size();
-    // for (size_t i = 0; i < kmerTable.n_gene; i++) {
-    //     kmerTable.count[i] = {};
-    // }
+
     // Extract kmer_matrix
     if (jsonData.contains("kmer_matrix")) {
         for (json::iterator it = jsonData["kmer_matrix"].begin(); it != jsonData["kmer_matrix"].end(); ++it) {
             for (json::iterator it2 = it.value().begin(); it2 != it.value().end(); ++it2) {
-                kmerTable.count[stoi(it2.key())][stoi(it.key())] = it2.value();
+                stringstream s2(it2.key());
+                stringstream s1(it.key());
+                size_t it2_key, it_key;
+                s2 >> it2_key;
+                s1 >> it_key;
+                kmerTable.count[it2_key][it_key] = it2.value();
             }
         }
     }
@@ -141,7 +144,10 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
     kmerTable.n_kmer_total = 0;
     if (jsonData.contains("kmer_entropy")) {
         for (json::iterator it = jsonData["kmer_entropy"].begin(); it != jsonData["kmer_entropy"].end(); ++it) {
-            kmerTable.entropy.insert(make_pair(stoi(it.key()), it.value()));
+            stringstream s1(it.key());
+            size_t it_key;
+            s1 >> it_key;
+            kmerTable.entropy.insert(make_pair(it_key, it.value()));
             kmerTable.n_kmer_total += 1;
         }
     }

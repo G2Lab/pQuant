@@ -247,7 +247,6 @@ void multCtxtByKmerTableRef2(Ciphertext_2d &ct_out, Ciphertext_1d &ct, KmerTable
 
 
 void multCtxtByKmerTableRefFromSerial(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, CryptoContext<DCRTPoly> &cc, PQuantParams &param) {
-    string path_output = param.path_output;
     auto start_time = std::chrono::high_resolution_clock::now();
     long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
     long n_genes = kmerTableRef.n_gene;
@@ -268,11 +267,6 @@ void multCtxtByKmerTableRefFromSerial(Ciphertext_1d &ct_out, Ciphertext_1d &ct, 
     std::cout << "Ref Kmer Table generated" << std::endl;
     std::cout << "encodeRefKmer table duration = " << table_duration << " s" << std::endl;
     std::cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << std::endl;
-
-    // std::string DATAFOLDER = "../crypto/ctxt";
-    // if (path_output != "") {
-    //     DATAFOLDER = path_output;
-    // }
 
     vector<size_t> kmer_index;
     if (param.path_kmer_matrix.size() > 0) {
@@ -329,41 +323,10 @@ void multCtxtByKmerTableRefFromSerial(Ciphertext_1d &ct_out, Ciphertext_1d &ct, 
                 cc->EvalAddInPlace(ct_out[g], ctxt);
             }
 
-            // if (!Serial::SerializeToFile(path + "/ctxt" + to_string(i) + ".txt", ctxt, SerType::BINARY)) {
-            //     std::cerr << "Error writing serialization of ciphertext 1 to ciphertext1.txt" << std::endl;
-            //     return;
-            // }
-            // std::cout << "Ciphertext " << i << " serialized" << std::endl;
-            // ct_out[g][i] = cc->EvalMult(ct[i], plain);
-
             // update progress bar
             print_progress_bar("multCtxtByKmerTableRefSerial", g * ct.size() + i, n_genes * ct.size(), start_time_mult);
         }
     }
-
-    // auto file_size_in_folder = 0.;
-    // auto num_files = 0;
-
-    // try {
-    //     for (int gene_index = 0; gene_index < n_genes ; ++gene_index) {
-    //         // Construct the folder path dynamically based on the gene index
-    //         std::string data_folder = DATAFOLDER + "/gene" + std::to_string(gene_index);
-
-    //         for (const auto& entry : fs::directory_iterator(data_folder)) {
-    //             if (entry.is_regular_file()) {
-    //                 file_size_in_folder += fs::file_size(entry);
-    //                 num_files++;
-    //             }
-    //         }
-    //     }
-    // } catch (const std::exception& ex) {
-    //     std::cerr << "Error: " << ex.what() << std::endl;
-    // }
-
-    // std::cout << std::endl;
-    // std::cout << "Total size in folder " << DATAFOLDER << " = " << file_size_in_folder / (1024. * 1024. * 1024.) << " GB" << std::endl;
-    // std::cout << "Number of files in folder " << DATAFOLDER << " = " << num_files << std::endl;
-
 }
 
 void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair) {

@@ -228,7 +228,7 @@ void Task::run_all(PQuantParams &param) {
     CCParams<CryptoContextBFVRNS> parameters;
     parameters.SetPlaintextModulus(65537);
     parameters.SetMultiplicativeDepth(1);
-    parameters.SetMaxRelinSkDeg(1);
+    parameters.SetMaxRelinSkDeg(2);
 
     CryptoContext<DCRTPoly> cryptoContext = GenCryptoContext(parameters);
     // enable features that you wish to use

@@ -19,19 +19,15 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->target = result["target"].as<std::string>();
     this->progress_bar = result["bar"].as<bool>();
     this->verbose = result["verbose"].as<bool>();
-    this->serial = result["serial"].as<bool>();
-    this->path_output = result["out"].as<std::string>();
     this->debug_n_gene = result["debug_n_gene"].as<int>();
 }
 
 void PQuantParams::print() {
     std::cout << "path_filename_read = " << this->path_filename_read << std::endl;
     std::cout << "path_filename_ref = " << this->path_filename_ref << std::endl;
-    std::cout << "path_output = " << this->path_output << std::endl;
     
     std::cout << "k = " << this->k << std::endl;
     std::cout << "target = " << this->target << std::endl;
     std::cout << "verbose = " << this->verbose << std::endl;
-    std::cout << "serial = " << this->serial << std::endl;
     std::cout << "progress_bar = " << this->progress_bar << std::endl;
 }
