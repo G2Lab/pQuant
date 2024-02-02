@@ -99,12 +99,7 @@ void Task::bfvBenchmark(PQuantParams &param) {
     TimeVar t;
     double processingTime(0.0);
 
-    size_t memory_usage = getMemoryUsage();
-
-    // Print memory usage in a human-readable format
-    double memory_usage_gb = static_cast<double>(memory_usage) / (1024.0 * 1024.0 * 1024.0); // Convert to GB
-
-    std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
+    printMemoryUsage();
 
     CCParams<CryptoContextBFVRNS> parameters;
     parameters.SetSecurityLevel(HEStd_128_classic);
@@ -213,12 +208,7 @@ void Task::bfvBenchmark(PQuantParams &param) {
     processingTime = TOC(t);
     std::cout << "Add time: " << processingTime / iteration << "ms" << std::endl;
 
-    memory_usage = getMemoryUsage();
-
-    // Print memory usage in a human-readable format
-    memory_usage_gb = static_cast<double>(memory_usage) / (1024.0 * 1024.0 * 1024.0); // Convert to GB
-
-    std::cout << "Memory Usage: " << memory_usage_gb << " GB" << std::endl;
+    printMemoryUsage();
 }
 
 void Task::run_all(PQuantParams &param) {
@@ -254,6 +244,7 @@ void Task::run_all(PQuantParams &param) {
         cout << "=== read kmerTableRef from json ===" << endl;
         parseJson(param.path_kmer_matrix, kmerTableRef);
     } else {
+        cout << "=== read refs_seq ===" << endl;
         vector<Sequence> refs_seq;
         readFastaFile(param.path_filename_ref, refs_seq);
         computeKmerTable(refs_seq, param.k, kmerTableRef);
@@ -263,8 +254,8 @@ void Task::run_all(PQuantParams &param) {
         printKmerTable(kmerTableRef, true);
     }
     end_time = std::chrono::high_resolution_clock::now();
-    auto duration_ref = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
-    cout << "computeKmerTable duration = " << duration_ref << " s" << endl;
+    auto duration_ref = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    cout << "computeKmerTable duration = " << duration_ref << " ms" << endl;
     
     
     vector<Sequence> reads_seq;
@@ -305,28 +296,56 @@ void Task::run_all(PQuantParams &param) {
     cout << " === run encryptReadKmer === " << endl;
     Ciphertext_1d ct;
     if (param.path_kmer_matrix.size() == 0) {
+        cout << "run full table version" << endl;
         encryptReadKmer(kmerTableRead, ct, cryptoContext, keyPair, param);
     } else {
+        cout << "run sparse version" << endl;
         encryptReadSparse(ct, kmerTableRead, kmerTableRef, cryptoContext, keyPair, param);
     }
     cout << endl;
     cout << "ct.size() = " << ct.size() << endl;
     cout << endl;
     end_time = std::chrono::high_resolution_clock::now();
-    auto duration_encread = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
-    cout << "encryptReadKmer duration = " << duration_encread << " s" << endl;
+    auto duration_encread = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    cout << "encryptReadKmer duration = " << duration_encread << " ms" << endl;
 
-    start_time = std::chrono::high_resolution_clock::now();
-    cout << endl;
-    cout << " === run multCtxtByRef === " << endl;
+    size_t duration_mult, duration_encode, duration_encode_and_mult;
     Ciphertext_1d ct_out;
-    multCtxtByKmerTableRefFromSerial(ct_out, ct, kmerTableRef, cryptoContext, param);
-    cout << endl;
-    cout << "ct_out.size() = " << ct_out.size() << endl;
-    cout << endl;
-    end_time = std::chrono::high_resolution_clock::now();
-    auto duration_mult = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
-    cout << "multCtxtByRef duration = " << duration_mult << " s" << endl;
+    if (param.memory) {
+        start_time = std::chrono::high_resolution_clock::now();
+        cout << endl;
+        cout << " === run encodeRefKmer === " << endl;
+        Plaintext_2d pt_ref;
+        encodeRefKmer(kmerTableRef, pt_ref, cryptoContext, keyPair, param);
+        cout << endl;
+        cout << "pt_ref.size() = " << pt_ref.size() << endl;
+        cout << endl;
+        end_time = std::chrono::high_resolution_clock::now();
+        duration_encode = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        cout << "encodeRefKmer duration = " << duration_encode << " ms" << endl;
+        start_time = std::chrono::high_resolution_clock::now();
+        cout << endl;
+        cout << " === run multCtxtByRef === " << endl;
+        multCtxtByEncodedRef(ct_out, ct, pt_ref, cryptoContext, param);
+        cout << endl;
+        cout << "ct_out.size() = " << ct_out.size() << endl;
+        cout << endl;
+        duration_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        cout << "multCtxtByRef duration = " << duration_mult << " ms" << endl;
+    } else {
+        start_time = std::chrono::high_resolution_clock::now();
+        cout << endl;
+        cout << " === run multCtxtByKmerTableRefFromSerial === " << endl;
+        multCtxtByKmerTableRefFromSerial(ct_out, ct, kmerTableRef, cryptoContext, param);
+        cout << endl;
+        cout << "ct_out.size = " << ct_out.size() << endl;
+        cout << endl;
+        end_time = std::chrono::high_resolution_clock::now();
+        duration_encode_and_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+        cout << "multCtxtByRef duration = " << duration_mult << " ms" << endl;
+    }
+    
+    
 
     start_time = std::chrono::high_resolution_clock::now();
     cout << endl;
@@ -335,6 +354,8 @@ void Task::run_all(PQuantParams &param) {
     for (size_t i = 0; i < ct_out.size(); i++) {
         cryptoContext->Decrypt(keyPair.secretKey, ct_out[i], &pt_sum[i]);
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    auto duration_dec = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     cout << endl;
     cout << "decrypt done" << endl;
     cout << endl;
@@ -343,17 +364,24 @@ void Task::run_all(PQuantParams &param) {
         cout << kmerTableRef.geneNameIndex[i] << " : " << plain[0] << endl;
     }
     cout << endl;
-    end_time = std::chrono::high_resolution_clock::now();
-    auto duration_dec = std::chrono::duration_cast<std::chrono::seconds>(end_time - start_time).count();
-    cout << "dec duration = " << duration_dec << " s" << endl;
+    
+    cout << "dec duration = " << duration_dec << " ms" << endl;
 
     // vector<Plaintext> pt_out;
     // decCtxtOut(pt_out, ct_out, cryptoContext, keyPair);
     // cout << "pt_out.size() = " << pt_out.size() << endl;
     cout << "== duration summary ==" << endl;
-    cout << "encryptReadKmer duration = " << duration_encread << " s" << endl;
-    cout << "multCtxtByRef duration   = " << duration_mult << " s" << endl;
-    cout << "dec duration             = " << duration_dec << " s" << endl;
+    cout << "computeKmerTable duration = " << duration_ref << " ms" << endl;
+    cout << "encryptReadKmer duration = " << duration_encread << " ms" << endl;
+    if (param.memory) {
+        cout << "encodeRefKmer duration   = " << duration_encode << " ms" << endl;
+        cout << "multCtxtByRef duration   = " << duration_mult << " ms" << endl;
+    } else {
+        cout << "multCtxtByRef duration   = " << duration_encode_and_mult << " ms" << endl;
+    }
+    cout << "dec duration             = " << duration_dec << " ms" << endl;
+
+    printMemoryUsage();
 }
 
 void Task::testReadJson(PQuantParams &param) {

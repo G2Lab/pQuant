@@ -23,8 +23,10 @@ int main(int argc, char **argv) {
         ("b,bar", "print progress bar", cxxopts::value<bool>()->default_value("false"))
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
+        ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value(""))
         ("m,kmer_matrix", "load kmer matrix from file path", cxxopts::value<std::string>()->default_value(""))
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
+        ("memory,divide_encode_mult", "divide encoding and multiplication steps", cxxopts::value<bool>()->default_value("false"))
         ("h,help", "Print usage")
     ;
 

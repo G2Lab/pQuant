@@ -18,15 +18,18 @@ static  std::unordered_map<std::string, std::pair<const char*, const char*>> dat
 class PQuantParams {
     public:
     long k;
+    float thres;
+    std::string data;
     std::string path_filename_read;
     std::string path_filename_ref;
     std::string path_kmer_matrix;
-    bool verbose;
     std::string target;
 
     //debug
+    bool verbose;
     int debug_n_gene;
     bool progress_bar;
+    bool memory;
 
     PQuantParams(cxxopts::ParseResult &result);
 

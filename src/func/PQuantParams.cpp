@@ -15,19 +15,31 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
 
     this->path_kmer_matrix = result["kmer_matrix"].as<std::string>();
     
+    this->data = result["data"].as<std::string>();
+    this->thres = result["thres"].as<float>();
     this->k = result["kmer"].as<int>();
     this->target = result["target"].as<std::string>();
     this->progress_bar = result["bar"].as<bool>();
     this->verbose = result["verbose"].as<bool>();
     this->debug_n_gene = result["debug_n_gene"].as<int>();
+    this->memory = result["divide_encode_mult"].as<bool>();
 }
 
 void PQuantParams::print() {
+    std::cout << " == file paths ==" << std::endl;
+    std::cout << "data name = " << this->data << std::endl;
     std::cout << "path_filename_read = " << this->path_filename_read << std::endl;
     std::cout << "path_filename_ref = " << this->path_filename_ref << std::endl;
-    
+    std::cout << "path_kmer_matrix = " << this->path_kmer_matrix << std::endl;
+    std::cout << std::endl;
+    std::cout << " == parameters ==" << std::endl;
     std::cout << "k = " << this->k << std::endl;
+    std::cout << "thres = " << this->thres << std::endl;
     std::cout << "target = " << this->target << std::endl;
+    std::cout << "debug_n_gene = " << this->debug_n_gene << std::endl;
+    std::cout << std::endl;
+    std::cout << " == flags ==" << std::endl;
     std::cout << "verbose = " << this->verbose << std::endl;
-    std::cout << "progress_bar = " << this->progress_bar << std::endl;
+    std::cout << "divide_encode_mult (memory) = " << this->memory << std::endl;
+    std::cout << "print_progress_bar = " << this->progress_bar << std::endl;
 }

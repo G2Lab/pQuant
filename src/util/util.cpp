@@ -77,6 +77,15 @@ size_t getMemoryUsage() {
     return memory_usage;
 }
 
+void printMemoryUsage() {
+    size_t memory_usage_mb = getMemoryUsage() / (1024. * 1024.);
+    if (memory_usage_mb < 1024) {
+        std::cout << "Memory usage = " << memory_usage_mb << " MB" << std::endl;
+    } else {
+        std::cout << "Memory usage = " << memory_usage_mb / 1024. << " GB" << std::endl;
+    }
+}
+
 long encode_nt_to_num(string nt) {
     long ans = 0;
     for (size_t i = 0; i < nt.size(); i++) {

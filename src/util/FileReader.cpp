@@ -112,12 +112,18 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
     }
 
     json jsonData;
+    auto start_time = std::chrono::high_resolution_clock::now();
     try {
+        cout << "read json file" << endl;
         file >> jsonData;
     } catch (const std::exception& e) {
         std::cerr << "Error parsing JSON: " << e.what() << std::endl;
         return;
     }
+    cout << "json file read" << endl;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    cout << "Time to read json file: " << duration << " ms" << endl;
     
     // Extract gene_name_vec
     if (jsonData.contains("gene_name_vec")) {
@@ -127,7 +133,10 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
     kmerTable.n_gene = kmerTable.geneNameIndex.size();
 
     // Extract kmer_matrix
+    cout << " extracting kmer matrix table" << endl;
+    start_time = std::chrono::high_resolution_clock::now();
     if (jsonData.contains("kmer_matrix")) {
+        size_t i = 0;
         for (json::iterator it = jsonData["kmer_matrix"].begin(); it != jsonData["kmer_matrix"].end(); ++it) {
             for (json::iterator it2 = it.value().begin(); it2 != it.value().end(); ++it2) {
                 stringstream s2(it2.key());
@@ -136,19 +145,30 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
                 s2 >> it2_key;
                 s1 >> it_key;
                 kmerTable.count[it2_key][it_key] = it2.value();
+                print_progress_bar("load kmer matrix table", i, jsonData["kmer_matrix"].size() * it.value().size(), start_time);
+                i += 1;
             }
         }
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    cout << "Time to extract kmer matrix table: " << duration << " ms" << endl;
 
     // Extract kmer_entropy
     kmerTable.n_kmer_total = 0;
+    start_time = std::chrono::high_resolution_clock::now();
     if (jsonData.contains("kmer_entropy")) {
+        int i = 0;
         for (json::iterator it = jsonData["kmer_entropy"].begin(); it != jsonData["kmer_entropy"].end(); ++it) {
             stringstream s1(it.key());
             size_t it_key;
             s1 >> it_key;
             kmerTable.entropy.insert(make_pair(it_key, it.value()));
             kmerTable.n_kmer_total += 1;
+            print_progress_bar("load kmer entropy table", i, jsonData["kmer_entropy"].size(), start_time);
         }
     }
+    end_time = std::chrono::high_resolution_clock::now();
+    duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    cout << "Time to extract kmer entropy table: " << duration << " ms" << endl;
 }

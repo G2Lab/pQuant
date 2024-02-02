@@ -22,6 +22,8 @@ using namespace std;
 
 size_t getMemoryUsage();
 
+void printMemoryUsage();
+
 long encode_nt_to_num(string nt);
 
 template <typename T>

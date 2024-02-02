@@ -40,3 +40,6 @@ openfhe/*
 dataset/*
 *.sh
 crypto/*
+*.txt
+*.csv
+*.ipynb

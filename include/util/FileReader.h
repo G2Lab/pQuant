@@ -10,6 +10,7 @@
 #include <vector>
 #include "func/Sequence.h"
 #include "util/Define.h"
+#include "util/util.h"
 #include "json.hpp"
 
 using namespace std;
