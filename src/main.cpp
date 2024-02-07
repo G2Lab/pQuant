@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
         ("b,bar", "print progress bar", cxxopts::value<bool>()->default_value("false"))
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
-        ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value(""))
+        ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value("0.00001"))
         ("m,kmer_matrix", "load kmer matrix from file path", cxxopts::value<std::string>()->default_value(""))
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
@@ -45,10 +45,10 @@ int main(int argc, char **argv) {
 
     param.print();
 
-
-    if (param.target.compare("fasta") == 0) {
+    if (param.target.compare("argument") == 0) {
+    } else if (param.target.compare("fasta") == 0) {
         Task::readFastaFiles(param);
-    } else if (param.target.compare("table2") == 0) {
+    } else if (param.target.compare("table") == 0) {
         Task::testKmerTable(param);
     } else if (param.target.compare("bench") == 0) {
         Task::bfvBenchmark(param);

@@ -273,20 +273,17 @@ void Task::run_all(PQuantParams &param) {
     if (param.debug_n_gene > 0) {
         kmerTableRef.n_gene = param.debug_n_gene;
         // erase all but debug_n_gene
-        kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.debug_n_gene),
-                                         kmerTableRef.geneNameIndex.end());
+        kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.debug_n_gene), kmerTableRef.geneNameIndex.end());
 
         cout << "Used gene list" << endl;
         for (size_t i = 0; i < kmerTableRef.geneNameIndex.size(); i++) {
             cout << kmerTableRef.geneNameIndex[i] << endl;
         }
-    } else if (param.gene_start > 0 && param.gene_end > 0) {
+    } else if (param.gene_start >= 0 && param.gene_end >= 0) {
         // erase all but gene_start to gene_end
         kmerTableRef.n_gene = param.gene_end - param.gene_start + 1;
-        kmerTableRef.geneNameIndex.erase(kmerTableRef.geneNameIndex.begin() + param.gene_end + 1,
-                                         kmerTableRef.geneNameIndex.end());
-        kmerTableRef.geneNameIndex.erase(kmerTableRef.geneNameIndex.begin(),
-                                         kmerTableRef.geneNameIndex.begin() + param.gene_start);
+        kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.gene_end + 1), kmerTableRef.geneNameIndex.end());
+        kmerTableRef.geneNameIndex.erase(kmerTableRef.geneNameIndex.begin(), std::next(kmerTableRef.geneNameIndex.begin(), param.gene_start));
         cout << "Used gene list" << endl;
         for (size_t i = 0; i < kmerTableRef.geneNameIndex.size(); i++) {
             cout << kmerTableRef.geneNameIndex[i] << endl;
