@@ -5,14 +5,21 @@
 #include <map>
 #include <iostream>
 #include <fstream>
+#include "util/util.h"
+
+long convertKmerToNum(string kmer);
+
+string sequenceReverseCompliment(string nt);
 
 class KmerTable {
 public:
     long K;
+    float thres;
     size_t n_gene;
     size_t n_kmer_total;
     std::vector<std::string> geneNameIndex;
     std::map<size_t, std::map<size_t, size_t>> count; // gene, [kmer, num]
+    std::map<size_t, std::map<size_t, size_t>> tableRef; // kmer, [(gene, num)] (entropy thresholded)
     std::map<size_t, size_t> countRead; // [kmer, num]
     std::map<size_t, float> entropy; // [kmer, entropy]
     bool isRef;
@@ -24,8 +31,16 @@ public:
         isRef = true;
     }
 
+    KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_);
+
     void print();
     void save(std::string filename);
+    
+    // Function to save KmerTable data to a binary file
+    void save_binary(const std::string& filename);
+
+    // Function to load KmerTable data from a binary file
+    void load_binary(const std::string& filename);
 };
 
 #endif
