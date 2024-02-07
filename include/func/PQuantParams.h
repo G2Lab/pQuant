@@ -28,6 +28,8 @@ class PQuantParams {
     //debug
     bool verbose;
     int debug_n_gene;
+    int gene_start;
+    int gene_end;
     bool progress_bar;
     bool memory;
 

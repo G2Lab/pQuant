@@ -104,7 +104,7 @@ void readFastQFile(const string& filename, vector<Sequence>& seq_vec) {
 
 using json = nlohmann::json;
 
-void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
+void parseJson(const std::string& jsonFile, KmerTable& kmerTable, PQuantParams& param) {
     std::ifstream file(jsonFile);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << jsonFile << std::endl;
@@ -136,7 +136,6 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
     cout << " extracting kmer matrix table" << endl;
     start_time = std::chrono::high_resolution_clock::now();
     if (jsonData.contains("kmer_matrix")) {
-        size_t i = 0;
         for (json::iterator it = jsonData["kmer_matrix"].begin(); it != jsonData["kmer_matrix"].end(); ++it) {
             for (json::iterator it2 = it.value().begin(); it2 != it.value().end(); ++it2) {
                 stringstream s2(it2.key());
@@ -145,8 +144,6 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
                 s2 >> it2_key;
                 s1 >> it_key;
                 kmerTable.count[it2_key][it_key] = it2.value();
-                print_progress_bar("load kmer matrix table", i, jsonData["kmer_matrix"].size() * it.value().size(), start_time);
-                i += 1;
             }
         }
     }
@@ -165,7 +162,9 @@ void parseJson(const std::string& jsonFile, KmerTable& kmerTable) {
             s1 >> it_key;
             kmerTable.entropy.insert(make_pair(it_key, it.value()));
             kmerTable.n_kmer_total += 1;
-            print_progress_bar("load kmer entropy table", i, jsonData["kmer_entropy"].size(), start_time);
+            if (param.progress_bar)
+                print_progress_bar("load kmer entropy table", i, jsonData["kmer_entropy"].size(), start_time);
+            i += 1;
         }
     }
     end_time = std::chrono::high_resolution_clock::now();

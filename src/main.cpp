@@ -26,6 +26,8 @@ int main(int argc, char **argv) {
         ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value(""))
         ("m,kmer_matrix", "load kmer matrix from file path", cxxopts::value<std::string>()->default_value(""))
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
+        ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
+        ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("memory,divide_encode_mult", "divide encoding and multiplication steps", cxxopts::value<bool>()->default_value("false"))
         ("h,help", "Print usage")
     ;

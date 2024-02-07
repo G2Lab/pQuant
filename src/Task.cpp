@@ -242,7 +242,7 @@ void Task::run_all(PQuantParams &param) {
     start_time = std::chrono::high_resolution_clock::now();
     if (param.path_kmer_matrix.size() > 0) {
         cout << "=== read kmerTableRef from json ===" << endl;
-        parseJson(param.path_kmer_matrix, kmerTableRef);
+        parseJson(param.path_kmer_matrix, kmerTableRef, param);
     } else {
         cout << "=== read refs_seq ===" << endl;
         vector<Sequence> refs_seq;
@@ -276,6 +276,17 @@ void Task::run_all(PQuantParams &param) {
         kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.debug_n_gene),
                                          kmerTableRef.geneNameIndex.end());
 
+        cout << "Used gene list" << endl;
+        for (size_t i = 0; i < kmerTableRef.geneNameIndex.size(); i++) {
+            cout << kmerTableRef.geneNameIndex[i] << endl;
+        }
+    } else if (param.gene_start > 0 && param.gene_end > 0) {
+        // erase all but gene_start to gene_end
+        kmerTableRef.n_gene = param.gene_end - param.gene_start + 1;
+        kmerTableRef.geneNameIndex.erase(kmerTableRef.geneNameIndex.begin() + param.gene_end + 1,
+                                         kmerTableRef.geneNameIndex.end());
+        kmerTableRef.geneNameIndex.erase(kmerTableRef.geneNameIndex.begin(),
+                                         kmerTableRef.geneNameIndex.begin() + param.gene_start);
         cout << "Used gene list" << endl;
         for (size_t i = 0; i < kmerTableRef.geneNameIndex.size(); i++) {
             cout << kmerTableRef.geneNameIndex[i] << endl;
@@ -330,13 +341,14 @@ void Task::run_all(PQuantParams &param) {
         cout << endl;
         cout << "ct_out.size() = " << ct_out.size() << endl;
         cout << endl;
+        end_time = std::chrono::high_resolution_clock::now();
         duration_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
         cout << "multCtxtByRef duration = " << duration_mult << " ms" << endl;
     } else {
         start_time = std::chrono::high_resolution_clock::now();
         cout << endl;
         cout << " === run multCtxtByKmerTableRefFromSerial === " << endl;
-        multCtxtByKmerTableRefFromSerial(ct_out, ct, kmerTableRef, cryptoContext, param);
+        multCtxtByKmerTableRef(ct_out, ct, kmerTableRef, cryptoContext, param);
         cout << endl;
         cout << "ct_out.size = " << ct_out.size() << endl;
         cout << endl;
@@ -370,6 +382,11 @@ void Task::run_all(PQuantParams &param) {
     // vector<Plaintext> pt_out;
     // decCtxtOut(pt_out, ct_out, cryptoContext, keyPair);
     // cout << "pt_out.size() = " << pt_out.size() << endl;
+
+    cout << "== Outputs summary == " << endl;
+    cout << "kmerTableRef.entropy.size() = " << kmerTableRef.entropy.size() << endl;
+    printMemoryUsage();
+    cout << endl;
     cout << "== duration summary ==" << endl;
     cout << "computeKmerTable duration = " << duration_ref << " ms" << endl;
     cout << "encryptReadKmer duration = " << duration_encread << " ms" << endl;
@@ -381,7 +398,6 @@ void Task::run_all(PQuantParams &param) {
     }
     cout << "dec duration             = " << duration_dec << " ms" << endl;
 
-    printMemoryUsage();
 }
 
 void Task::testReadJson(PQuantParams &param) {
@@ -392,7 +408,7 @@ void Task::testReadJson(PQuantParams &param) {
         throw runtime_error("Error: Failed to open file " + filename);
     } else {
         KmerTable kmerTable;
-        parseJson(filename, kmerTable);
+        parseJson(filename, kmerTable, param);
         printKmerTable(kmerTable, true);
     }
 }

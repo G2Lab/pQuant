@@ -34,7 +34,7 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
 
 void multCtxtByRef(Ciphertext_2d &ct_out, Ciphertext_1d &ct, Plaintext_2d &pt_ref, CryptoContext<DCRTPoly> &cc);
 
-void multCtxtByKmerTableRefFromSerial(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, CryptoContext<DCRTPoly> &cc, PQuantParams &param);
+void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, CryptoContext<DCRTPoly> &cc, PQuantParams &param);
 
 void multCtxtByEncodedRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, Plaintext_2d &pt_ref, CryptoContext<DCRTPoly> &cc, PQuantParams &param);
 

@@ -22,6 +22,8 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->progress_bar = result["bar"].as<bool>();
     this->verbose = result["verbose"].as<bool>();
     this->debug_n_gene = result["debug_n_gene"].as<int>();
+    this->gene_start = result["gene_start"].as<int>();
+    this->gene_end = result["gene_end"].as<int>();
     this->memory = result["divide_encode_mult"].as<bool>();
 }
 
@@ -32,11 +34,15 @@ void PQuantParams::print() {
     std::cout << "path_filename_ref = " << this->path_filename_ref << std::endl;
     std::cout << "path_kmer_matrix = " << this->path_kmer_matrix << std::endl;
     std::cout << std::endl;
-    std::cout << " == parameters ==" << std::endl;
+    std::cout << " == default parameters ==" << std::endl;
     std::cout << "k = " << this->k << std::endl;
     std::cout << "thres = " << this->thres << std::endl;
     std::cout << "target = " << this->target << std::endl;
+    std::cout << std::endl;
+    std::cout << " == conditional parameters ==" << std::endl;
     std::cout << "debug_n_gene = " << this->debug_n_gene << std::endl;
+    std::cout << "gene_start = " << this->gene_start << std::endl;
+    std::cout << "gene_end = " << this->gene_end << std::endl;
     std::cout << std::endl;
     std::cout << " == flags ==" << std::endl;
     std::cout << "verbose = " << this->verbose << std::endl;

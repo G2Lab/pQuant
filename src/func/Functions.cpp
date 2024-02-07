@@ -246,7 +246,7 @@ void multCtxtByEncodedRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, Plaintext_2d
     }
 }
 
-void multCtxtByKmerTableRefFromSerial(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, CryptoContext<DCRTPoly> &cc, PQuantParams &param) {
+void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable kmerTableRef, CryptoContext<DCRTPoly> &cc, PQuantParams &param) {
     auto start_time = std::chrono::high_resolution_clock::now();
     size_t encode_total_time = 0;
     size_t mult_total_time = 0;
