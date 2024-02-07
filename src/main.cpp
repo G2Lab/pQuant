@@ -54,8 +54,6 @@ int main(int argc, char **argv) {
         Task::bfvBenchmark(param);
     } else if (param.target.compare("all") == 0) {
         Task::run_all(param);
-    } else if (param.target.compare("json") == 0) {
-        Task::testReadJson(param);
     } else {
         std::cout << "Invalid target algorithm" << std::endl;
         exit(0);

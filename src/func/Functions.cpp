@@ -20,7 +20,6 @@ void printKmerTable(KmerTable &kmerTable, bool isRef) {
             }
              std::cout << std::endl;
         }
-
     } else {
         std::cout << " KmerTable for read" << std::endl;
         std::cout << "countRead.size() = " << kmerTable.countRead.size() << std::endl;
@@ -28,6 +27,7 @@ void printKmerTable(KmerTable &kmerTable, bool isRef) {
              std::cout << "(" << p.first << ", " << p.second << ") ";
         }
     }
+    std::cout << std::endl;
 }
 
 void encryptReadKmer(KmerTable &kmerTableRead, Ciphertext_1d &ct, CryptoContext<DCRTPoly> &cc, KeyPair<DCRTPoly> &keyPair, PQuantParams &param) {

@@ -66,14 +66,14 @@ void Task::testKmerTable(PQuantParams &param) {
     readFastaFile(path_filename_ref, refs_seq);
     readFastaFile(path_filename_read, reads_seq);
 
-    cout << "check reads_Seq" << endl;
-    for (size_t i = 0; i < reads_seq.size(); i++) {
-        cout << "reads_seq[" << i << "].getGeneName() = " << reads_seq[i].getGeneName() << endl;
-        cout << "reads_seq[" << i << "].getNumSeq() = " << reads_seq[i].getNumSeq() << endl;
-        for (size_t j = 0; j < static_cast<size_t>(reads_seq[i].getNumSeq()); j++) {
-            cout << "reads_seq[" << i << "].getSeq(" << j << ") = " << reads_seq[i].getSeq(j) << endl;
-        }
-    }
+    // cout << "check reads_Seq" << endl;
+    // for (size_t i = 0; i < reads_seq.size(); i++) {
+    //     cout << "reads_seq[" << i << "].getGeneName() = " << reads_seq[i].getGeneName() << endl;
+    //     cout << "reads_seq[" << i << "].getNumSeq() = " << reads_seq[i].getNumSeq() << endl;
+    //     for (size_t j = 0; j < static_cast<size_t>(reads_seq[i].getNumSeq()); j++) {
+    //         cout << "reads_seq[" << i << "].getSeq(" << j << ") = " << reads_seq[i].getSeq(j) << endl;
+    //     }
+    // }
 
     KmerTable kmerTableRef;
     KmerTable kmerTableRead;
@@ -242,7 +242,7 @@ void Task::run_all(PQuantParams &param) {
     start_time = std::chrono::high_resolution_clock::now();
     if (param.path_kmer_matrix.size() > 0) {
         cout << "=== read kmerTableRef from json ===" << endl;
-        parseJson(param.path_kmer_matrix, kmerTableRef, param);
+        // parseJson(param.path_kmer_matrix, kmerTableRef, param);
     } else {
         cout << "=== read refs_seq ===" << endl;
         vector<Sequence> refs_seq;
@@ -397,15 +397,15 @@ void Task::run_all(PQuantParams &param) {
 
 }
 
-void Task::testReadJson(PQuantParams &param) {
-    // Specify the path to your JSON file
-    std::string filename = "../../pQuant_rust/kmer.json";
-    std::ifstream file(filename);
-    if (!file.is_open()) {
-        throw runtime_error("Error: Failed to open file " + filename);
-    } else {
-        KmerTable kmerTable;
-        parseJson(filename, kmerTable, param);
-        printKmerTable(kmerTable, true);
-    }
-}
+// void Task::testReadJson(PQuantParams &param) {
+//     // Specify the path to your JSON file
+//     std::string filename = "../../pQuant_rust/kmer.json";
+//     std::ifstream file(filename);
+//     if (!file.is_open()) {
+//         throw runtime_error("Error: Failed to open file " + filename);
+//     } else {
+//         KmerTable kmerTable;
+//         parseJson(filename, kmerTable, param);
+//         printKmerTable(kmerTable, true);
+//     }
+// }

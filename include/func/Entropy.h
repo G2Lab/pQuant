@@ -10,6 +10,7 @@
 #include "util/Define.h"
 #include "util/FileReader.h"
 #include "util/util.h"
+#include "util/KmerTable.h"
 using namespace std;
 
 void computeKmerTable(vector<Sequence>& gene, long K, KmerTable &kmerTable);

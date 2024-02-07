@@ -4,6 +4,7 @@
 #include <iostream>
 #include "util/FileReader.h"
 #include "util/Define.h"
+#include "util/KmerTable.h"
 #include "func/Functions.h"
 #include "func/Entropy.h"
 #include "func/PQuantParams.h"
@@ -23,7 +24,7 @@ public:
 
     static void run_all(PQuantParams &param);
 
-    static void testReadJson(PQuantParams &param);
+    // static void testReadJson(PQuantParams &param);
 };
 
 #endif
