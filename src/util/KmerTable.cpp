@@ -197,6 +197,41 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
     }
 }
 
+bool KmerTable::operator==(const KmerTable& other) const {
+    if (K != other.K) {
+        return false;
+    }
+    if (thres != other.thres) {
+        return false;
+    }
+    if (n_gene != other.n_gene) {
+        return false;
+    }
+    if (n_kmer_total != other.n_kmer_total) {
+        return false;
+    }
+    if (geneNameIndex != other.geneNameIndex) {
+        return false;
+    }
+    if (count != other.count) {
+        return false;
+    }
+    if (tableRef != other.tableRef) {
+        return false;
+    }
+    if (countRead != other.countRead) {
+        return false;
+    }
+    if (entropy != other.entropy) {
+        return false;
+    }
+    if (isRef != other.isRef) {
+        return false;
+    }
+    return true;
+
+}
+
 void KmerTable::print() {
     if (isRef) {
         std::cout << "K = " << K << std::endl;
@@ -247,68 +282,238 @@ void KmerTable::print() {
     std::cout << std::endl;
 }
 
-void KmerTable::save(std::string filename) {
-    std::ofstream file(filename + ".txt");
-    std::ofstream file_kmer(filename + "_kmer_list.txt");
+void KmerTable::save(const std::string& filename) {
+    std::ofstream file(filename);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return;
     }
-    if (!file_kmer.is_open()) {
-        std::cerr << "Error opening file: " << filename + "_kmer_list.txt" << std::endl;
-        return;
-    }
-    file_kmer << "kmer_index, kmer" << std::endl;
-
-    file << "gene_name_vec: [";
+    // save K, thres, n_gene, and n_kmer_total
+    file << "K: " << K << std::endl;
+    file << "thres: " << thres << std::endl;
+    file << "n_gene: " << n_gene << std::endl;
+    file << "n_kmer_total: " << n_kmer_total << std::endl;
+    file << "isRef = " << isRef << std::endl;
+    file << "geneNameIndex: [";
     for (size_t i = 0; i < geneNameIndex.size(); i++) {
-        file << "\"" << geneNameIndex[i] << "\"";
+        file << geneNameIndex[i];
         if (i < geneNameIndex.size() - 1) {
             file << ", ";
         }
     }
     file << "]" << std::endl;
 
-    file << "kmer_matrix: {" << std::endl;
+    file << "count: {" << std::endl;
     auto start_time = std::chrono::high_resolution_clock::now();
     int i = 0;
     for (auto p : count) {
-        file << p.first << ": {" << std::endl;
+        file << p.first << ": {";
         for (auto q : p.second) {
             file << q.first << ": " << q.second;
             if (q.first != p.second.rbegin()->first) {
                 file << ",";
             }
-            file << std::endl;
+            file << " ";
         }
-        file << "  }";
+        file << "}";
         if (p.first != count.rbegin()->first) {
             file << ",";
         }
         file << std::endl;
-        print_progress_bar("kmer_matrix saving..", i, count.size(), start_time);
+        print_progress_bar("count saving..", i, count.size(), start_time);
         i += 1;
     }
     file << "}" << std::endl;
 
-    file << "kmer_entropy: {" << std::endl;
-    std::cout << "n_kmer_total = " << n_kmer_total << std::endl;
+    file << "tableRef: {" << std::endl;
+    i = 0;
+    start_time = std::chrono::high_resolution_clock::now();
+    for (auto p : tableRef) {
+        file << p.first << ": {";
+        for (auto q : p.second) {
+            file << q.first << ": " << q.second;
+            if (q.first != p.second.rbegin()->first) {
+                file << ",";
+            }
+            file << " ";
+        }
+        file << "}";
+        if (p.first != tableRef.rbegin()->first) {
+            file << ",";
+        }
+        file << std::endl;
+        print_progress_bar("tableRef saving..", i, tableRef.size(), start_time);
+        i += 1;
+    }
+    file << "}" << std::endl;
+
+    file << "entropy: {";
     std::cout << entropy.size() << std::endl;
     i = 0;
     start_time = std::chrono::high_resolution_clock::now();
     for (auto p : entropy) {
         file << p.first << ": " << p.second;
-        file_kmer << p.first << std::endl;
         if (p.first != entropy.rbegin()->first) {
             file << ",";
         }
-        file << std::endl;
-        print_progress_bar("kmer_entropy saving..", i, entropy.size(), start_time);
+        file << " ";
+        print_progress_bar("entropy saving..", i, entropy.size(), start_time);
         i += 1;
+    }
+    file << "}";
+
+    file.close();
+}
+
+void KmerTable::saveKmerList(const std::string& filename) {
+    std::ofstream file_kmer(filename);
+    if (!file_kmer.is_open()) {
+        std::cerr << "Error opening file: " << filename + "_kmer_list.txt" << std::endl;
+        return;
+    }
+    for (auto p: entropy) {
+        file_kmer << p.first << std::endl;
+    }
+    file_kmer.close();
+}
+
+void KmerTable::load(const std::string& filename) {
+    std::ifstream file(filename);
+
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filename << ".txt" << std::endl;
+        return;
+    }
+
+    // Load K, thres, n_gene, and n_kmer_total
+    // Load K from the file
+    std::string line;
+    std::getline(file, line); // Read the first line containing K data
+    std::istringstream iss(line);
+    std::string prefix;
+    std::getline(iss, prefix, ' '); // Remove "K: "
+    std::string temp;
+    std::getline(iss, temp); // Read the remaining value
+    K = std::stol(temp); // Convert string to long
+
+    // Load thres from the file
+    std::getline(file, line); // Read the line containing thres data
+    std::istringstream iss_thres(line);
+    std::getline(iss_thres, prefix, ' '); // Remove "thres: "
+    std::getline(iss_thres, temp); // Read the remaining value
+    thres = std::stof(temp); // Convert string to float containing n_kmer_total data
+
+    // Load n_gene from the file
+    std::getline(file, line); // Read the line containing n_gene data
+    std::istringstream iss_n_gene(line);
+    std::getline(iss_n_gene, prefix, ' '); // Remove "n_gene: "
+    std::getline(iss_n_gene, temp); // Read the remaining value
+    n_gene = std::stol(temp); // Convert string to long
+
+    // Load n_kmer_total from the file
+    std::getline(file, line); // Read the line containing n_kmer_total data
+    std::istringstream iss_n_kmer_total(line);
+    std::getline(iss_n_kmer_total, prefix, ' '); // Remove "n_kmer_total: "
+    std::getline(iss_n_kmer_total, temp); // Read the remaining value
+    n_kmer_total = std::stol(temp); // Convert string to long
+
+    // Load isRef from the file
+    std::getline(file, line); // Read the line containing isRef data
+    std::istringstream iss_isRef(line);
+    std::getline(iss_isRef, prefix, ' '); // Remove "isRef = "
+    std::getline(iss_isRef, temp); // Read the remaining value
+    isRef = (temp == "true") ? true : false; // Convert string to boolean
+
+
+    // Load geneNameIndex
+    std::getline(file, line); // Read the next line containing geneNameIndex data
+    std::istringstream iss5(line);
+    std::getline(iss5, temp, '['); // Remove "geneNameIndex: ["
+    while (std::getline(iss5, temp, ',')) {
+        if (!temp.empty()) {
+            // remove "]" from the last gene name
+            if (temp.find("]") != std::string::npos) {
+                temp = temp.substr(0, temp.size() - 1);
+            }
+            geneNameIndex.push_back(temp);
+        }
+    }
+
+    // Load count
+    while (std::getline(file, line)) {
+        if (line.find("count: {") != std::string::npos) {
+            break;
+        }
+    }
+    count.clear(); // Clear existing data
+    while (std::getline(file, line)) {
+        // break if line ONLY contains "}"
+        if (line == "}") {
+            break;
+        }
+        size_t gene;
+        std::map<size_t, size_t> kmerData;
+        std::istringstream iss6(line);
+        iss6 >> gene;
+        char seperator;
+        cout << "gene = " << gene << endl;
+        while (iss6 >> seperator) {
+            if (seperator == ',' || seperator == '{') {
+                size_t key, val;
+                iss6 >> key >> seperator >> val;
+                kmerData[key] = val;
+                cout << "key = " << key << ", val = " << val << endl;
+            }
+        }
+        count[gene] = kmerData;
+    }
+
+    // Load tableRef
+    while (std::getline(file, line)) {
+        if (line.find("tableRef: {") != std::string::npos) {
+            break;
+        }
+    }
+    tableRef.clear(); // Clear existing data
+    while (std::getline(file, line)) {
+        // break if line ONLY contains "}"
+        if (line == "}") {
+            break;
+        }
+        size_t kmer;
+        std::map<size_t, size_t> kmerData;
+        std::istringstream iss6(line);
+        iss6 >> kmer;
+        char seperator;
+        while (iss6 >> seperator) {
+            if (seperator == ',' || seperator == '{') {
+                size_t key, val;
+                iss6 >> key >> seperator >> val;
+                kmerData[key] = val;
+            }
+        }
+        tableRef[kmer] = kmerData;
+    }
+
+    // Load entropy
+    while (std::getline(file, line)) {
+        if (line.find("entropy:") != std::string::npos) {
+            break;
+        }
+    }
+    entropy.clear(); // Clear existing data
+    std::istringstream iss6(line);
+    char seperator;
+    while (iss6 >> seperator) {
+        if (seperator == ',' || seperator == '{') {
+            size_t key;
+            float val;
+            iss6 >> key >> seperator >> val;
+            entropy[key] = val;
+        }
     }
 
     file.close();
-    file_kmer.close();
 }
 
 // Function to save KmerTable data to a binary file
@@ -324,8 +529,9 @@ void KmerTable::save_binary(const std::string &filename) {
         return;
     }
 
-    // Write K, n_gene, and n_kmer_total
+    // Write K, thres, n_gene, and n_kmer_total
     file.write(reinterpret_cast<char *>(&K), sizeof(K));
+    file.write(reinterpret_cast<char *>(&thres), sizeof(thres));
     file.write(reinterpret_cast<char *>(&n_gene), sizeof(n_gene));
     file.write(reinterpret_cast<char *>(&n_kmer_total), sizeof(n_kmer_total));
 
@@ -447,4 +653,20 @@ void KmerTable::load_binary(const std::string &filename) {
 
     // Close the file
     file.close();
+}
+
+void loadKmerList(const std::string& filename, vector<size_t>& kmerList) {
+    std::ifstream file_kmer(filename);
+    if (!file_kmer.is_open()) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
+    }
+    std::string line;
+    while (std::getline(file_kmer, line)) {
+        std::istringstream iss(line);
+        size_t kmer;
+        iss >> kmer;
+        kmerList.push_back(kmer);
+    } 
+    file_kmer.close();
 }

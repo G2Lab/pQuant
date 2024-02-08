@@ -33,8 +33,12 @@ public:
 
     KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_);
 
+    bool operator==(const KmerTable& other) const;
+
     void print();
-    void save(std::string filename);
+    void save(const std::string& filename);
+    void saveKmerList(const std::string& filename);
+    void load(const std::string& filename);
     
     // Function to save KmerTable data to a binary file
     void save_binary(const std::string& filename);
@@ -42,5 +46,7 @@ public:
     // Function to load KmerTable data from a binary file
     void load_binary(const std::string& filename);
 };
+
+void loadKmerList(const std::string& filename, vector<size_t>& kmerList);
 
 #endif

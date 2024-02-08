@@ -95,7 +95,8 @@ void Task::testKmerTable(PQuantParams &param) {
     // kmerTableRead.print();
 
     cout << "== save kmerTableRef to txt ==" << endl;
-    kmerTableRef.save("kmerTableRef");
+    kmerTableRef.save("kmerTableRef.txt");
+    kmerTableRef.saveKmerList("kmerTableRef_kmer_list.txt");
 
     cout << "print file size" << endl;
     ifstream file("kmerTableRef.txt");
@@ -160,6 +161,19 @@ void Task::testKmerTable(PQuantParams &param) {
         }
     }
 
+    // load and check ==
+    KmerTable kmerTableRef2;
+    kmerTableRef2.load("kmerTableRef");
+    vector<size_t> kmer_list;
+    loadKmerList("kmerTableRef_kmer_list.txt", kmer_list);
+    cout << "======== kmertable origin ========" << endl;
+    kmerTableRef.print();
+    cout << "======== kmertable loaded ========" << endl;
+    kmerTableRef2.print();
+    cout << "======== kmertable kmer list ========" << endl;
+    for (size_t i = 0; i < kmer_list.size(); i++) {
+        cout << kmer_list[i] << endl;
+    }
 }
 
 void Task::bfvBenchmark(PQuantParams &param) {
