@@ -3,6 +3,7 @@
 #include "func/Entropy.h"
 #include "openfhe.h"
 #include "Task.h"
+#include "MainAlgorithmSet.h"
 #include "func/PQuantParams.h"
 #include <algorithm>
 #include <cstdlib>
@@ -24,7 +25,10 @@ int main(int argc, char **argv) {
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
         ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value("0.00001"))
-        ("m,kmer_matrix", "load kmer matrix from file path", cxxopts::value<std::string>()->default_value(""))
+        ("kmerFolder", "save/load kmerTable and kmerList from folder path; filename is automatically set by k/data/thres", cxxopts::value<std::string>()->default_value(""))
+        ("kmerTable", "save/load kmerTable from file path", cxxopts::value<std::string>()->default_value(""))
+        ("kmerList", "save/load kmerList from file path", cxxopts::value<std::string>()->default_value(""))
+        ("BFVFolder", "save/load BFV HE keys from folder path; filename is automatically set (pk, sk, params, etc)", cxxopts::value<std::string>()->default_value(""))
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
@@ -45,7 +49,18 @@ int main(int argc, char **argv) {
 
     param.print();
 
-    if (param.target.compare("argument") == 0) {
+    // main algorithms
+    if (param.target.compare("STEP1") == 0) {
+        MainAlgorithmSet::generateKmerTableFromReference(param);
+    } else if (param.target.compare("STEP2") == 0) {
+        MainAlgorithmSet::keyGenBFVandSerialize(param);
+    } else if (param.target.compare("STEP3") == 0) {
+        MainAlgorithmSet::encodeAndEncrypt(param);
+    } else if (param.target.compare("STEP4") == 0) {
+        MainAlgorithmSet::computeInnerProductBatch(param);
+    } else if (param.target.compare("STEP5") == 0) {
+        MainAlgorithmSet::decryptAndReturnGeneVector(param);
+    } else if (param.target.compare("argument") == 0) {
     } else if (param.target.compare("fasta") == 0) {
         Task::readFastaFiles(param);
     } else if (param.target.compare("table") == 0) {

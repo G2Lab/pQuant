@@ -134,7 +134,7 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
     size_t n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
     size_t n_genes = kmerTableRef.n_gene;
     size_t n_vec_per_gene = ceil(pow(4, param.k) / (double)n_slots);
-    if (param.path_kmer_matrix.size() > 0) {
+    if (param.filename_kmerTable.size() > 0) {
         n_vec_per_gene = (kmerTableRef.n_kmer_total - 1) / n_slots + 1;
     }
     
@@ -152,7 +152,7 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
     std::cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << std::endl;
 
     vector<size_t> kmer_index;
-    if (param.path_kmer_matrix.size() > 0) {
+    if (param.filename_kmerTable.size() > 0) {
         for (auto &p : kmerTableRef.entropy) {
             kmer_index.push_back(p.first);
         }
@@ -172,7 +172,7 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
         size_t num_vec, num_slot;
         map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
         for (auto &kmerEntry: geneEntry) {
-            if (param.path_kmer_matrix.size() == 0) {
+            if (param.filename_kmerTable.size() == 0) {
                 num_vec = kmerEntry.first / n_slots;
                 num_slot = kmerEntry.first % n_slots;
             } else {
@@ -253,7 +253,7 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
     long n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
     long n_genes = kmerTableRef.n_gene;
     long n_vec_per_gene = ceil(pow(4, param.k) / (double)n_slots);
-    if (param.path_kmer_matrix.size() > 0) {
+    if (param.filename_kmerTable.size() > 0) {
         n_vec_per_gene = (kmerTableRef.n_kmer_total - 1) / n_slots + 1;
     }
     ct_out.resize(n_genes);
@@ -271,7 +271,7 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
     std::cout << "Memory usage = " << getMemoryUsage() / 1024 / 1024 << " KB" << std::endl;
 
     vector<size_t> kmer_index;
-    if (param.path_kmer_matrix.size() > 0) {
+    if (param.filename_kmerTable.size() > 0) {
         for (auto &p : kmerTableRef.entropy) {
             kmer_index.push_back(p.first);
         }
@@ -288,7 +288,7 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
         map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
         auto start_time_encode = std::chrono::high_resolution_clock::now();
         for (auto &kmerEntry: geneEntry) {
-            if (param.path_kmer_matrix.size() == 0) {
+            if (param.filename_kmerTable.size() == 0) {
                 num_vec = kmerEntry.first / n_slots;
                 num_slot = kmerEntry.first % n_slots;
             } else {

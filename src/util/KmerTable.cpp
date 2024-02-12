@@ -45,6 +45,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 
     // case 1: from Reference
     if (isRef) {
+        map<size_t, map<size_t, size_t>> count_total;
         if (geneNameIndex.size() == 0) {
             // save gene list into geneNameIndex
             for (size_t i = 0; i < gene.size(); i++) {
@@ -133,7 +134,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             }
 
             // save gene_kmer_count into count
-            count.insert(make_pair(i, gene_kmer_count));
+            count_total.insert(make_pair(i, gene_kmer_count));
             gene_kmer_count.clear();
 
             print_progress_bar("countKmersPerGene", i, gene.size(), start_time);
@@ -156,7 +157,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             entropy_total.insert(make_pair(kmer, entropy_));
         }
 
-        // threshold entropy
+        // filter entropy
         for (auto it = entropy_total.begin(); it != entropy_total.end(); ++it) {
             if (it->second < thres) {
                 entropy.insert(make_pair(it->first, it->second));
@@ -164,7 +165,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
         }
         entropy_total.clear();
 
-        // threshold kmer_occurance
+        // filter kmer_occurance
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             if (entropy.find(it->first) != entropy.end()) {
                 tableRef.insert(make_pair(it->first, it->second));
@@ -172,6 +173,19 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
         }
         n_kmer_total = entropy.size();
         kmer_occurance.clear();
+
+        // filter count_total
+        for (auto it = count_total.begin(); it != count_total.end(); ++it) {
+            map<size_t, size_t> gene_kmer_count = it->second;
+            map<size_t, size_t> gene_kmer_count_filtered;
+            for (auto it2 = gene_kmer_count.begin(); it2 != gene_kmer_count.end(); ++it2) {
+                if (entropy.find(it2->first) != entropy.end()) {
+                    gene_kmer_count_filtered.insert(make_pair(it2->first, it2->second));
+                }
+            }
+            count.insert(make_pair(it->first, gene_kmer_count_filtered));
+        }
+        count_total.clear();
     } else {
         // case 2: from read
         // count kmers in gene
@@ -187,9 +201,6 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                     if (num == -1) {
                         continue;
                     }
-                    if (countRead.find(num) == countRead.end()) {
-                        countRead[num] = 0;
-                    }
                     countRead[num] += 1;
                 }
             }
@@ -198,36 +209,116 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 }
 
 bool KmerTable::operator==(const KmerTable& other) const {
-    if (K != other.K) {
+    if (K != other.K || thres != other.thres || n_gene != other.n_gene || n_kmer_total != other.n_kmer_total || isRef != other.isRef) {
+        cout << "K, thres, n_gene, n_kmer_total, or isRef is different\n"
+        << "K: " << K << ", " << other.K << "\n"
+        << "thres: " << thres << ", " << other.thres << "\n"
+        << "n_gene: " << n_gene << ", " << other.n_gene << "\n"
+        << "n_kmer_total: " << n_kmer_total << ", " << other.n_kmer_total << "\n"
+        << "isRef: " << isRef << ", " << other.isRef << endl;
         return false;
     }
-    if (thres != other.thres) {
+    if (geneNameIndex.size() != other.geneNameIndex.size()) {
+        cout << "geneNameIndex size is different\n"
+        << "geneNameIndex.size(): " << geneNameIndex.size() << ", " << other.geneNameIndex.size() << endl;
         return false;
     }
-    if (n_gene != other.n_gene) {
+    for (size_t i = 0; i < geneNameIndex.size(); i++) {
+        if (geneNameIndex[i] != other.geneNameIndex[i]) {
+            cout << "geneNameIndex[" << i << "] is different\n"
+            << "geneNameIndex[" << i << "]: " << geneNameIndex[i] << ", " << other.geneNameIndex[i] << endl;
+            return false;
+        }
+    }
+    if (count.size() != other.count.size()) {
+        cout << "count size is different\n"
+        << "count.size(): " << count.size() << ", " << other.count.size() << endl;
         return false;
     }
-    if (n_kmer_total != other.n_kmer_total) {
+    for (auto &p : count) {
+        if (other.count.find(p.first) == other.count.end()) {
+            cout << "gene " << p.first << " is not found in other.count\n";
+            return false;
+        }
+        if (p.second.size() != other.count.at(p.first).size()) {
+            cout << "p.second.size() is different\n"
+            << "p.second.size(): " << p.second.size() << ", " << other.count.at(p.first).size() << endl;
+            return false;
+        }
+        for (auto &q : p.second) {
+            if (other.count.at(p.first).find(q.first) == other.count.at(p.first).end()) {
+                cout << "kmer " << q.first << " is not found in other.count[" << p.first << "]\n";
+                return false;
+            }
+            if (q.second != other.count.at(p.first).at(q.first)) {
+                cout << "count is different\n"
+                << "count[" << p.first << "][" << q.first << "]: " << q.second << ", " << other.count.at(p.first).at(q.first) << endl;
+                return false;
+            }
+        }
+    }
+
+    if (tableRef.size() != other.tableRef.size()) {
+        cout << "tableRef size is different\n"
+        << "tableRef.size(): " << tableRef.size() << ", " << other.tableRef.size() << endl;
         return false;
     }
-    if (geneNameIndex != other.geneNameIndex) {
+    for (auto &p : tableRef) {
+        if (other.tableRef.find(p.first) == other.tableRef.end()) {
+            cout << "kmer " << p.first << " is not found in other.tableRef\n";
+            return false;
+        }
+        if (p.second.size() != other.tableRef.at(p.first).size()) {
+            cout << "p.second.size() is different\n"
+            << "p.second.size(): " << p.second.size() << ", " << other.tableRef.at(p.first).size() << endl;
+            return false;
+        }
+        for (auto &q : p.second) {
+            if (other.tableRef.at(p.first).find(q.first) == other.tableRef.at(p.first).end()) {
+                cout << "gene " << q.first << " is not found in other.tableRef[" << p.first << "]\n";
+                return false;
+            }
+            if (q.second != other.tableRef.at(p.first).at(q.first)) {
+                cout << "count is different\n"
+                << "count[" << p.first << "][" << q.first << "]: " << q.second << ", " << other.tableRef.at(p.first).at(q.first) << endl;
+                return false;
+            }
+        }
+    }
+
+    if (countRead.size() != other.countRead.size()) {
+        cout << "countRead size is different\n"
+        << "countRead.size(): " << countRead.size() << ", " << other.countRead.size() << endl;
         return false;
     }
-    if (count != other.count) {
+    for (auto &p : countRead) {
+        if (other.countRead.find(p.first) == other.countRead.end()) {
+            cout << "kmer " << p.first << " is not found in other.countRead\n";
+            return false;
+        }
+        if (p.second != other.countRead.at(p.first)) {
+            cout << "counRead is different\n"
+            << "counRead[" << p.first << "]: " << p.second << ", " << other.countRead.at(p.first) << endl;
+            return false;
+        }
+    }
+    if (entropy.size() != other.entropy.size()) {
+        cout << "entropy size is different\n"
+        << "entropy.size(): " << entropy.size() << ", " << other.entropy.size() << endl;
         return false;
     }
-    if (tableRef != other.tableRef) {
-        return false;
+    for (auto &p : entropy) {
+        if (other.entropy.find(p.first) == other.entropy.end()) {
+            cout << "kmer " << p.first << " is not found in other.entropy\n";
+            return false;
+        }
+        if (p.second - other.entropy.at(p.first) >= 0.0001) {
+            cout << "entropy is different\n"
+            << "entropy[" << p.first << "]: " << p.second << ", " << other.entropy.at(p.first) << endl;
+            return false;
+        }
     }
-    if (countRead != other.countRead) {
-        return false;
-    }
-    if (entropy != other.entropy) {
-        return false;
-    }
-    if (isRef != other.isRef) {
-        return false;
-    }
+    
     return true;
 
 }
@@ -293,7 +384,7 @@ void KmerTable::save(const std::string& filename) {
     file << "thres: " << thres << std::endl;
     file << "n_gene: " << n_gene << std::endl;
     file << "n_kmer_total: " << n_kmer_total << std::endl;
-    file << "isRef = " << isRef << std::endl;
+    file << "isRef: " << isRef << std::endl;
     file << "geneNameIndex: [";
     for (size_t i = 0; i < geneNameIndex.size(); i++) {
         file << geneNameIndex[i];
@@ -372,7 +463,7 @@ void KmerTable::saveKmerList(const std::string& filename) {
         return;
     }
     for (auto p: entropy) {
-        file_kmer << p.first << std::endl;
+        file_kmer << p.first << " ";
     }
     file_kmer.close();
 }
@@ -422,8 +513,7 @@ void KmerTable::load(const std::string& filename) {
     std::istringstream iss_isRef(line);
     std::getline(iss_isRef, prefix, ' '); // Remove "isRef = "
     std::getline(iss_isRef, temp); // Read the remaining value
-    isRef = (temp == "true") ? true : false; // Convert string to boolean
-
+    isRef = (temp == "1");
 
     // Load geneNameIndex
     std::getline(file, line); // Read the next line containing geneNameIndex data
@@ -434,6 +524,10 @@ void KmerTable::load(const std::string& filename) {
             // remove "]" from the last gene name
             if (temp.find("]") != std::string::npos) {
                 temp = temp.substr(0, temp.size() - 1);
+            }
+            // remove ' ' from prefix of temp
+            if (temp[0] == ' ') {
+                temp = temp.substr(1, temp.size());
             }
             geneNameIndex.push_back(temp);
         }
@@ -456,13 +550,11 @@ void KmerTable::load(const std::string& filename) {
         std::istringstream iss6(line);
         iss6 >> gene;
         char seperator;
-        cout << "gene = " << gene << endl;
         while (iss6 >> seperator) {
             if (seperator == ',' || seperator == '{') {
                 size_t key, val;
                 iss6 >> key >> seperator >> val;
                 kmerData[key] = val;
-                cout << "key = " << key << ", val = " << val << endl;
             }
         }
         count[gene] = kmerData;
@@ -655,6 +747,20 @@ void KmerTable::load_binary(const std::string &filename) {
     file.close();
 }
 
+void KmerTable::filterGenes(size_t start, size_t end) {
+    n_gene = end - start + 1;
+    geneNameIndex.erase(std::next(geneNameIndex.begin(), end + 1), geneNameIndex.end());
+    geneNameIndex.erase(geneNameIndex.begin(), std::next(geneNameIndex.begin(), start));
+    if (n_gene != geneNameIndex.size()) {
+        std::cerr << "KmerTable::filterGenes::Error: n_gene is not equal to geneNameIndex.size()" << std::endl;
+        exit(0);
+    }
+    cout << "Used gene list" << endl;
+    for (size_t i = 0; i < n_gene; i++) {
+        cout << geneNameIndex[i] << endl;
+    }
+}
+
 void loadKmerList(const std::string& filename, vector<size_t>& kmerList) {
     std::ifstream file_kmer(filename);
     if (!file_kmer.is_open()) {
@@ -662,10 +768,10 @@ void loadKmerList(const std::string& filename, vector<size_t>& kmerList) {
         return;
     }
     std::string line;
-    while (std::getline(file_kmer, line)) {
-        std::istringstream iss(line);
-        size_t kmer;
-        iss >> kmer;
+    std::getline(file_kmer, line);
+    std::istringstream iss(line);
+    size_t kmer;
+    while(iss >> kmer) {
         kmerList.push_back(kmer);
     } 
     file_kmer.close();

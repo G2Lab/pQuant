@@ -14,6 +14,7 @@
 #include <vector>
 #include <iomanip>
 #include <chrono>
+#include <cstdlib>
 #include <ctime>
 
 #include "util/date.h"
@@ -36,4 +37,6 @@ void print_progress_bar(std::string instruction, int iter, int total, std::chron
 
 std::string ElapsedTime(std::chrono::seconds secs);
 
+void printFileSize(const std::string& filename);
+void printFolderSize(const std::string& foldername);
 #endif

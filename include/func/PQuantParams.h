@@ -20,9 +20,11 @@ class PQuantParams {
     long k;
     float thres;
     std::string data;
-    std::string path_filename_read;
-    std::string path_filename_ref;
-    std::string path_kmer_matrix;
+    std::string filename_read;
+    std::string filename_ref;
+    std::string filename_kmerTable;
+    std::string filename_kmerList;
+    std::string foldername_BFV;
     std::string target;
 
     //debug

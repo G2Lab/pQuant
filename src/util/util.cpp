@@ -179,3 +179,36 @@ inline void print_matrix(std::vector<T> matrix, std::size_t row_size) {
     }
     std::cout << std::endl;
 }
+
+void printFileSize(const std::string& filename) {
+    ifstream file(filename);
+    if (!file.is_open()) {
+        throw runtime_error("Error: Failed to open file " + filename);
+    } else {
+        file.seekg(0, ios::end);
+        std::streampos filesize = file.tellg();
+        double filesizeKB = static_cast<double>(filesize) / 1024;
+        // print filesize. If the file size is large, print as GB
+        cout << "filesize of " << filename << " = ";
+        if (filesizeKB < 1024) {
+            cout << filesizeKB << " KB" << endl;
+        } else {
+            double filesizeMB = filesizeKB / 1024;
+            if (filesizeMB < 1024) {
+                cout << filesizeMB << " MB" << endl;
+            } else {
+                double filesizeGB = filesizeMB / 1024;
+                cout << filesizeGB << " GB" << endl;
+            }
+            
+        }
+    }
+}
+
+void printFolderSize(const std::string& foldername) {
+    std::string command = "du -sh " + foldername;
+    int status = system(command.c_str());
+    if (status != 0) {
+        std::cerr << "Error executing command: " << command << std::endl;
+    }
+}

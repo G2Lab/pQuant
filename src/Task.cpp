@@ -3,11 +3,11 @@
 void Task::readFastaFiles(PQuantParams &param) {
     // Read reference sequences from the file
     vector<Sequence> refs_seq;
-    readFastaFile(param.path_filename_read, refs_seq);
+    readFastaFile(param.filename_read, refs_seq);
 
     // Read read sequences from the file
     vector<Sequence> reads_seq;
-    readFastaFile(param.path_filename_ref, reads_seq);
+    readFastaFile(param.filename_ref, reads_seq);
 
     long total_n_ref = 0;
     long n_gene_ref = 0;
@@ -19,7 +19,7 @@ void Task::readFastaFiles(PQuantParams &param) {
     long avg = 0;
     // Print some information about the reference sequences
     cout << "Reference sequences:" << endl;
-    cout << param.path_filename_ref << endl;
+    cout << param.filename_ref << endl;
     for (auto &ref_seq : refs_seq) {
         cout << "Gene name: " << ref_seq.getGeneName() << ", Num seq: " << ref_seq.getNumSeq() << endl;
         n_gene_ref += 1;
@@ -37,7 +37,7 @@ void Task::readFastaFiles(PQuantParams &param) {
 
     // Print some information about the read sequences
     cout << "Read sequences:" << endl;
-    cout << param.path_filename_read << endl;
+    cout << param.filename_read << endl;
     for (auto &read_seq : reads_seq) {
         // cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
         n_gene_read += 1;
@@ -57,22 +57,13 @@ void Task::readFastaFiles(PQuantParams &param) {
 }
 
 void Task::testKmerTable(PQuantParams &param) {
-    string path_filename_ref = param.path_filename_ref;
-    string path_filename_read = param.path_filename_read;
+    string filename_ref = param.filename_ref;
+    string filename_read = param.filename_read;
 
     vector<Sequence> refs_seq;
     vector<Sequence> reads_seq;
-    readFastaFile(path_filename_ref, refs_seq);
-    readFastaFile(path_filename_read, reads_seq);
-
-    // cout << "check reads_Seq" << endl;
-    // for (size_t i = 0; i < reads_seq.size(); i++) {
-    //     cout << "reads_seq[" << i << "].getGeneName() = " << reads_seq[i].getGeneName() << endl;
-    //     cout << "reads_seq[" << i << "].getNumSeq() = " << reads_seq[i].getNumSeq() << endl;
-    //     for (size_t j = 0; j < static_cast<size_t>(reads_seq[i].getNumSeq()); j++) {
-    //         cout << "reads_seq[" << i << "].getSeq(" << j << ") = " << reads_seq[i].getSeq(j) << endl;
-    //     }
-    // }
+    readFastaFile(filename_ref, refs_seq);
+    readFastaFile(filename_read, reads_seq);
 
     KmerTable kmerTableRef(refs_seq, param, true);
     KmerTable kmerTableRead(reads_seq, param, false);
@@ -99,81 +90,40 @@ void Task::testKmerTable(PQuantParams &param) {
     kmerTableRef.saveKmerList("kmerTableRef_kmer_list.txt");
 
     cout << "print file size" << endl;
-    ifstream file("kmerTableRef.txt");
-    ifstream file2("kmerTableRef_kmer_list.txt");
-    if (!file.is_open()) {
-        throw runtime_error("Error: Failed to open file kmerTableRef");
-    } else {
-        file.seekg(0, ios::end);
-        std::streampos filesize = file.tellg();
-        double filesizeMB = static_cast<double>(filesize) / 1024 / 1024;
-        // print filesize. If the file size is large, print as GB
-        if (filesizeMB > 1024) {
-            cout << "filesize = " << filesizeMB / 1024 << " GB" << endl;
-        } else {
-            cout << "filesize = " << filesizeMB << " MB" << endl;
-        }
-    }
-    if (!file2.is_open()) {
-        throw runtime_error("Error: Failed to open file kmerTableRef_kmer_list");
-    } else {
-        file2.seekg(0, ios::end);
-        std::streampos filesize = file2.tellg();
-        double filesizeMB = static_cast<double>(filesize) / 1024 / 1024;
-        // print filesize. If the file size is large, print as GB
-        if (filesizeMB > 1024) {
-            cout << "filesize = " << filesizeMB / 1024 << " GB" << endl;
-        } else {
-            cout << "filesize = " << filesizeMB << " MB" << endl;
-        }
-    }
+    printFileSize("kmerTableRef.txt");
+    printFileSize("kmerTableRef_kmer_list.txt");
 
     cout << "== save kmerTableRef to bin ==" << endl;
     kmerTableRef.save_binary("kmerTableRef");
 
     cout << "print file size" << endl;
-    ifstream file3("kmerTableRef.bin");
-    if (!file3.is_open()) {
-        throw runtime_error("Error: Failed to open file kmerTableRef.bin");
-    } else {
-        file3.seekg(0, ios::end);
-        std::streampos filesize = file3.tellg();
-        double filesizeMB = static_cast<double>(filesize) / 1024 / 1024;
-        // print filesize. If the file size is large, print as GB
-        if (filesizeMB > 1024) {
-            cout << "filesize = " << filesizeMB / 1024 << " GB" << endl;
-        } else {
-            cout << "filesize = " << filesizeMB << " MB" << endl;
-        }
-    }
-    ifstream file4("kmerTableRef_kmer_list.bin");
-    if (!file4.is_open()) {
-        throw runtime_error("Error: Failed to open file kmerTableRef_kmer_list.bin");
-    } else {
-        file4.seekg(0, ios::end);
-        std::streampos filesize = file4.tellg();
-        double filesizeMB = static_cast<double>(filesize) / 1024 / 1024;
-        // print filesize. If the file size is large, print as GB
-        if (filesizeMB > 1024) {
-            cout << "filesize = " << filesizeMB / 1024 << " GB" << endl;
-        } else {
-            cout << "filesize = " << filesizeMB << " MB" << endl;
-        }
-    }
+    printFileSize("kmerTableRef.bin");
+    printFileSize("kmerTableRef_kmer_list.bin");
 
     // load and check ==
     KmerTable kmerTableRef2;
-    kmerTableRef2.load("kmerTableRef");
+    kmerTableRef2.load("kmerTableRef.txt");
     vector<size_t> kmer_list;
     loadKmerList("kmerTableRef_kmer_list.txt", kmer_list);
-    cout << "======== kmertable origin ========" << endl;
-    kmerTableRef.print();
-    cout << "======== kmertable loaded ========" << endl;
-    kmerTableRef2.print();
-    cout << "======== kmertable kmer list ========" << endl;
-    for (size_t i = 0; i < kmer_list.size(); i++) {
-        cout << kmer_list[i] << endl;
+    // cout << "======== kmertable origin ========" << endl;
+    // kmerTableRef.print();
+    // cout << "======== kmertable loaded ========" << endl;
+    // kmerTableRef2.print();
+    // cout << "======== kmertable kmer list ========" << endl;
+    // for (size_t i = 0; i < kmer_list.size(); i++) {
+    //     cout << kmer_list[i] << ", ";
+    // }
+    cout << "check kmer list ==" << endl;
+    int i = 0;
+    for (auto p: kmerTableRef.entropy) {
+        if (p.first != kmer_list[i]) {
+            cout << "error at " << i << endl;
+            cout << p.first << " != " << kmer_list[i] << endl;
+            return;
+        }
+        i += 1;
     }
+    cout << "done" << endl;
 }
 
 void Task::bfvBenchmark(PQuantParams &param) {
@@ -321,19 +271,18 @@ void Task::run_all(PQuantParams &param) {
 
     KmerTable kmerTableRef;
     start_time = std::chrono::high_resolution_clock::now();
-    if (param.path_kmer_matrix.size() > 0) {
+    if (param.filename_kmerTable.size() > 0) {
         cout << "=== read kmerTableRef from json ===" << endl;
-        // parseJson(param.path_kmer_matrix, kmerTableRef, param);
+        kmerTableRef.load(param.filename_kmerTable);
     } else {
         cout << "=== read refs_seq ===" << endl;
         vector<Sequence> refs_seq;
-        readFastaFile(param.path_filename_ref, refs_seq);
+        readFastaFile(param.filename_ref, refs_seq);
         kmerTableRef = KmerTable(refs_seq, param, true);
-        // computeKmerTable(refs_seq, param.k, kmerTableRef);
         refs_seq.clear();
     }
     if (param.verbose) {
-        printKmerTable(kmerTableRef, true);
+        kmerTableRef.print();
     }
     end_time = std::chrono::high_resolution_clock::now();
     auto duration_ref = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
@@ -342,14 +291,14 @@ void Task::run_all(PQuantParams &param) {
     
     vector<Sequence> reads_seq;
     cout << "=== read reads_seq ===" << endl;
-    readFastaFile(param.path_filename_read, reads_seq);
+    readFastaFile(param.filename_read, reads_seq);
     // KmerTable kmerTableRead;
     cout << "=== compute kmerTableRead ===" << endl;
     // computeKmerTableForRead(reads_seq, param.k, kmerTableRead);
     KmerTable kmerTableRead(reads_seq, param, false);
     reads_seq.clear();
     if (param.verbose) {
-        printKmerTable(kmerTableRead, false);
+        kmerTableRead.print();
     }
 
     // remove all but x gene (debugging)
@@ -386,7 +335,7 @@ void Task::run_all(PQuantParams &param) {
     cout << endl;
     cout << " === run encryptReadKmer === " << endl;
     Ciphertext_1d ct;
-    if (param.path_kmer_matrix.size() == 0) {
+    if (param.filename_kmerTable.size() == 0) {
         cout << "run full table version" << endl;
         encryptReadKmer(kmerTableRead, ct, cryptoContext, keyPair, param);
     } else {

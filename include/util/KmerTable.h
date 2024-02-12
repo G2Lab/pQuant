@@ -45,6 +45,8 @@ public:
 
     // Function to load KmerTable data from a binary file
     void load_binary(const std::string& filename);
+
+    void filterGenes(size_t start, size_t end);
 };
 
 void loadKmerList(const std::string& filename, vector<size_t>& kmerList);

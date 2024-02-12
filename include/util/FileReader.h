@@ -13,7 +13,6 @@
 #include "util/Define.h"
 #include "util/util.h"
 #include "util/KmerTable.h"
-#include "json.hpp"
 
 using namespace std;
 
