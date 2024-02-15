@@ -197,10 +197,13 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     std::cout << "=== encode kmerTableRead.countRead ===" << std::endl;
     auto start_time_encode = std::chrono::high_resolution_clock::now();
     int count = 0;
+    size_t index;
     for (auto &p : kmerTableRead.countRead) {
-        auto it = std::lower_bound(kmer_list.begin(), kmer_list.end(), p.first);
-        if (it != kmer_list.end() && *it == p.first) {
-            size_t index = std::distance(kmer_list.begin(), it);
+        bool search = binary_search_util(kmer_list, p.first, index);
+        // auto it = std::lower_bound(kmer_list.begin(), kmer_list.end(), p.first);
+        if (search) {
+        // if (it != kmer_list.end() && *it == p.first) {
+            // size_t index = std::distance(kmer_list.begin(), it);
             size_t num_vec = index / n_slots;
             size_t num_slot = index % n_slots;
             plain_vec[num_vec][num_slot] = p.second;
@@ -316,6 +319,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         start = param.gene_start;
         end = param.gene_end + 1;
     }
+    cout << "start = " << start << " : end = " << end << endl;
 
     // read kmerList
     std::cout << "=== load kmerList ===" << std::endl;
@@ -328,7 +332,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
 
     // set parameters
     size_t n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
-    size_t n_genes = kmerTableRef.n_gene;
+    size_t n_genes = end - start;
     size_t n_vec_per_gene = (kmerTableRef.n_kmer_total - 1) / n_slots + 1;
 
     std::cout << "check parameters" << std::endl;
@@ -341,11 +345,17 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     // encode kmerTable
     std::cout << "=== encode kmerTable ===" << std::endl;
     auto start_time_encode = std::chrono::high_resolution_clock::now();
-    Plaintext_2d pt_ref(n_genes);
+    Plaintext_2d pt_ref(end - start);
     int progress = 0;
+    int total_kmers = 0;
     for (size_t g = start; g < end; g++) {
-        pt_ref[g].resize(n_vec_per_gene);
+        total_kmers += kmerTableRef.count[g].size();
+    }
+    cout << "total kmers = " << total_kmers << endl;
+    for (size_t g = start; g < end; g++) {
+        pt_ref[g - start].resize(n_vec_per_gene);
         vector<vector<int64_t>> plain_vec(n_vec_per_gene, vector<int64_t>(n_slots, 0));
+        cout << "plain_vec size = " << plain_vec.size() << " : " << plain_vec[0].size() << endl;
         size_t num_vec, num_slot;
         map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
         for (auto &kmerEntry: geneEntry) {
@@ -353,14 +363,21 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
                 num_vec = kmerEntry.first / n_slots;
                 num_slot = kmerEntry.first % n_slots;
             } else {
-                size_t index = std::distance(kmer_list.begin(), std::find(kmer_list.begin(), kmer_list.end(), kmerEntry.first));
-                // pass if p.first is not in kmer_list
-                if (index == kmer_list.size()) {
-                    // cout << "index = " << index << " : not found" << endl;
+                // size_t index = std::distance(kmer_list.begin(), std::find(kmer_list.begin(), kmer_list.end(), kmerEntry.first));
+                // // pass if p.first is not in kmer_list
+                // if (index == kmer_list.size()) {
+                //     // cout << "index = " << index << " : not found" << endl;
+                //     continue;
+                // }
+                size_t index;
+                bool search = binary_search_util(kmer_list, kmerEntry.first, index);
+                if (!search) {
                     continue;
+                    // cout << "search " << kmerEntry.first << " : not found" << endl;
                 }
                 num_vec = index / n_slots;
                 num_slot = index % n_slots;
+                // cout << "search " << kmerEntry.first << " : " << index << " : " << num_vec << " : " << num_slot << endl;
             }
             
             if (num_slot == 0) {
@@ -370,18 +387,19 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
             }
             // update progress bar
             if (param.progress_bar) {
-                print_progress_bar("encode reference", progress, n_genes * geneEntry.size(), start_time_encode);
-                progress += 1;
+                print_progress_bar("encode reference", progress, total_kmers, start_time_encode);
             }
+            progress += 1;
         }
 
         for (size_t i = 0; i < n_vec_per_gene; i++) {
-            pt_ref[g][i] = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            pt_ref[g - start][i] = cc->MakeCoefPackedPlaintext(plain_vec[i]);
         }
         plain_vec.clear();
     }
     auto end_time_encode = std::chrono::high_resolution_clock::now();
     auto duration_encode = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encode - start_time_encode).count();
+    std::cout << std::endl;
     std::cout << "encode reference duration = " << duration_encode << " ms" << std::endl;
 
     // read ctxtRead
@@ -416,10 +434,10 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     for (size_t g = start; g < end; g++) {   
         for (size_t i = 0; i < ct.size(); i++) {
             if (i == 0) {
-                ct_out[g] = cc->EvalMult(ct[0], pt_ref[g][i]);
+                ct_out[g - start] = cc->EvalMult(ct[0], pt_ref[g - start][i]);
             } else {
-                Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], pt_ref[g][i]);
-                cc->EvalAddInPlace(ct_out[g], ctxt);
+                Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], pt_ref[g - start][i]);
+                cc->EvalAddInPlace(ct_out[g - start], ctxt);
             }
 
             // update progress bar
@@ -442,7 +460,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     }
     for (size_t i = start; i < end; i++) {
         std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
-        if (!Serial::SerializeToFile(filename_ctxtOut_i, ct_out[i], SerType::BINARY)) {
+        if (!Serial::SerializeToFile(filename_ctxtOut_i, ct_out[i - start], SerType::BINARY)) {
             std::cerr << "Error writing serialization of the ctxt_out to " << filename_ctxtOut_i << std::endl;
             return;
         }

@@ -142,6 +142,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 
         std::map<size_t, float> entropy_total;
         // compute entropy
+        int i = 0;
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             size_t kmer = it->first;
             float entropy_ = 0;
@@ -155,26 +156,41 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                 entropy_ += -p * log2(p);
             }
             entropy_total.insert(make_pair(kmer, entropy_));
+            if (param.progress_bar) {
+                print_progress_bar("computeEntropy", i, kmer_occurance.size(), start_time);
+                i += 1;
+            }
         }
 
         // filter entropy
+        i = 0;
         for (auto it = entropy_total.begin(); it != entropy_total.end(); ++it) {
             if (it->second < thres) {
                 entropy.insert(make_pair(it->first, it->second));
+            }
+            if (param.progress_bar) {
+                print_progress_bar("filterEntropy", i, entropy_total.size(), start_time);
+                i += 1;
             }
         }
         entropy_total.clear();
 
         // filter kmer_occurance
+        i = 0;
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             if (entropy.find(it->first) != entropy.end()) {
                 tableRef.insert(make_pair(it->first, it->second));
+            }
+            if (param.progress_bar) {
+                print_progress_bar("filterKmerOccurance", i, kmer_occurance.size(), start_time);
+                i += 1;
             }
         }
         n_kmer_total = entropy.size();
         kmer_occurance.clear();
 
         // filter count_total
+        i = 0;
         for (auto it = count_total.begin(); it != count_total.end(); ++it) {
             map<size_t, size_t> gene_kmer_count = it->second;
             map<size_t, size_t> gene_kmer_count_filtered;
@@ -184,6 +200,10 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                 }
             }
             count.insert(make_pair(it->first, gene_kmer_count_filtered));
+            if (param.progress_bar) {
+                print_progress_bar("filterCountTotal", i, count_total.size(), start_time);
+                i += 1;
+            }
         }
         count_total.clear();
     } else {

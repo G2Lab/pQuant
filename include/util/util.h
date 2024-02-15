@@ -21,7 +21,10 @@
 #include "util/FileReader.h"
 using namespace std;
 
+bool binary_search_util(std::vector<size_t>& v, size_t target, size_t& index);
+
 size_t getMemoryUsage();
+size_t getPeakMemoryUsage();
 
 void printMemoryUsage();
 

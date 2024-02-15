@@ -1,5 +1,28 @@
 #include "util/util.h"
 
+bool binary_search_util(std::vector<size_t>& v, size_t target, size_t& index) {
+    size_t start = 0;
+    size_t end = v.size();
+    while(start + 1 < end) {
+        size_t pivot = (start + end) / 2;
+        if (target <= v[pivot]) {
+            end = pivot;
+        } else {
+            start = pivot;
+        }
+    }
+    if (v[start] == target) {
+        index = start;
+        return true;
+    } else if (v[end] == target) {
+        index = end;
+        return true;
+    } else {
+        index = 0;
+        return false;
+    }
+}
+
 std::string ElapsedTime(std::chrono::seconds secs) {
     using namespace std;
     using namespace std::chrono;
@@ -77,12 +100,41 @@ size_t getMemoryUsage() {
     return memory_usage;
 }
 
+size_t getPeakMemoryUsage() {
+    size_t peak_memory_usage = 0;
+
+    // Open the status file for the current process
+    std::ifstream status_file("/proc/self/status");
+    std::string line;
+
+    // Search for the line containing peak memory usage
+    while (std::getline(status_file, line)) {
+        if (line.find("VmPeak") != std::string::npos) {
+            std::istringstream iss(line);
+            std::string label;
+            size_t value;
+            iss >> label >> value;
+            peak_memory_usage = value * 1024; // Convert to bytes
+            break;
+        }
+    }
+
+    return peak_memory_usage;
+}
+
 void printMemoryUsage() {
     size_t memory_usage_mb = getMemoryUsage() / (1024. * 1024.);
+    size_t pick_memory_usage = getPeakMemoryUsage() / (1024. * 1024.);
+    std::string pick_memory_surfix = "MB";
+    if (pick_memory_usage > 1024) {
+        pick_memory_usage = pick_memory_usage / 1024;
+        pick_memory_surfix = "GB";
+    }
+
     if (memory_usage_mb < 1024) {
-        std::cout << "Memory usage = " << memory_usage_mb << " MB" << std::endl;
+        std::cout << "Memory usage = " << memory_usage_mb << " MB (pick = " << pick_memory_usage << " " << pick_memory_surfix << ")" << std::endl;
     } else {
-        std::cout << "Memory usage = " << memory_usage_mb / 1024. << " GB" << std::endl;
+        std::cout << "Memory usage = " << memory_usage_mb / 1024. << " GB (pick = " << pick_memory_usage << " " << pick_memory_surfix << ")" << std::endl;
     }
 }
 

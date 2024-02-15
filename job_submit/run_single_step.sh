@@ -4,7 +4,6 @@
 #SBATCH --nodes=1                 # Number of nodes
 #SBATCH --ntasks-per-node=1       # Number of tasks (MPI processes) per node
 #SBATCH --cpus-per-task=1         # Number of CPU cores per task
-#SBATCH --mem=200G                  # Memory per node (adjust as needed)
 #SBATCH --mail-user=shong@nygenome.org   # Specify your email address
 
 # Navigate to the directory containing your executable
