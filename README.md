@@ -59,17 +59,9 @@ For instance, you can run with
 ```bash
     # cd ~
     cd job_submit
-    $GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
-    $READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_fastqs/5k_random_protein_coding_genes.genes_only.fq"
+    GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
+    READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_fastqs/5k_random_protein_coding_genes.genes_only.fq"
     # note that above dataset consists of 5000 genes, so add that as an argument `-n`
     # with `-b 250`, the code automatically divides 5000 genes into 250 batches and run with 20 genes per one job in Step 4.
     sbatch run_all.sh -k 15 -t 0.00001 -g ${GENE_PATH} -r ${READ_PATH} -n 5000 -b 250 -m 200G -o ../out
 ```
-
-
-Our algorithm consists of 5 steps. For instance, run step 1 as
-```bash
-    # cd build
-     ./pquant -t STEP1 -k 5 --thres 0.01 -g {gene_path} -r {read_path}
-```
-
