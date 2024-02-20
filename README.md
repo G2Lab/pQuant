@@ -19,14 +19,9 @@ OpenFHE is a public library that supports various homomorphic encryption schemes
     mkdir build
     cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=../../openfhe #install in local directory
-    make
+    make -j
     make install
 ```
-After that, test library as
-```bash
-    make testall
-```
-
 
 ### Build
 
@@ -36,7 +31,12 @@ After that, test library as
     cmake ..
     make -j
 ```
-As a result, executable file is made as name `pquant`.
+As a result, executable file is made as name `pquant`. To test, try run
+```bash
+    # cd ~/build
+    ./pquant -t bench
+```
+Then the code tests BFV schemes from openFHE library, and outputs runtimes for encode/encrypt/decrypt/add/mult.
 
 ### Run
 Use `*.sh` files in `job_submit/` folder. To run all jobs, run as follows
