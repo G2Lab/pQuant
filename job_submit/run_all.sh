@@ -12,24 +12,86 @@ cd /gpfs/commons/groups/gursoy_lab/shong/Github/pQuant_enc/job_submit
 
 echo "SLURM_JOB_ID: ${SLURM_JOB_ID}"
 # Define paths and arguments
-
-# DATA="five"
-# K=10
-# THRES=2
-# N_GENES=5
-# N_BATCH=5
-# MEM="5G"
-
-GENE_PATH=/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa
-READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_fastqs/5k_random_protein_coding_genes.genes_only.fq"
-K=25
-THRES=0.00001
+# Initialize variables with default values
+K=15
+THRES=0.001
 N_GENES=5000
 N_BATCH=250
 MEM="200G"
+GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
+READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_fastqs/5k_random_protein_coding_genes.genes_only.fq"
+DATA=""
+OUT_DIR="../out/021624"
+
+# Parse command line arguments
+while getopts ":k:g:r:t:n:b:m:d:o:" opt; do
+  case ${opt} in
+    k )
+      K=$OPTARG
+      ;;
+    g )
+      GENE_PATH=$OPTARG
+      ;;
+    r )
+      READ_PATH=$OPTARG
+      ;;
+    t )
+      THRES=$OPTARG
+      ;;
+    n )
+      N_GENES=$OPTARG
+      ;;
+    b )
+      N_BATCH=$OPTARG
+      ;;
+    m )
+      MEM=$OPTARG
+      ;;
+    d )
+      DATA=$OPTARG
+      ;;
+    o )
+      OUT_DIR=$OPTARG
+      ;;    
+    \? )
+      echo "Invalid option: $OPTARG" 1>&2
+      exit 1
+      ;;
+    : )
+      echo "Invalid option: $OPTARG requires an argument" 1>&2
+      exit 1
+      ;;
+  esac
+done
+shift $((OPTIND -1))
+
+DATA_PATHS=""
+# Assign gene and read paths based on the DATA value
+if [[ $DATA == "" ]]; then
+    DATA_PATHS="-g ${GENE_PATH} -r ${READ_PATH}"
+else
+    DATA_PATHS="-d ${DATA}"
+fi
+
+# Check if either DATA or GENE_PATH and READ_PATH are provided
+if ([ -z $DATA ] && ([ -z $GENE_PATH ] || [ -z $READ_PATH ])); then
+    echo "Usage: $0 [-d <DATA> | (-g <GENE_PATH> -r <READ_PATH>)] -k <K> -t <THRES> -n <N_GENES> -b <N_BATCH> -m <MEM> -out <OUT_DIR>"
+    echo "either DATA or GENE_PATH and READ_PATH must be provided"
+    exit 1
+fi
+
+# Print out the parameters
+echo "DATA_PATHS : $DATA_PATHS"
+echo "K: $K"
+echo "THRES: $THRES"
+echo "N_GENES: $N_GENES"
+echo "N_BATCH: $N_BATCH"
+echo "MEM: $MEM"
+echo "OUT_DIR: $OUT_DIR"
+
 
 # Create folders
-BASE_FOLDER=$"../out/${DATA}"
+BASE_FOLDER="${OUT_DIR}"
 KMER_FOLDER="${BASE_FOLDER}/${SLURM_JOB_ID}/kmer"
 BFV_FOLDER="${BASE_FOLDER}/${SLURM_JOB_ID}/bfv"
 SLURM_OUT_FOLDER="${BASE_FOLDER}/${SLURM_JOB_ID}/slurm_out"
@@ -43,7 +105,7 @@ mkdir -p ${SLURM_OUT_FOLDER}
 mkdir -p ${STEP4_FOLDER}
 
 # GLOBAL_ARGUMENT="-d ${DATA} -k ${K} --thres ${THRES} --kmerFolder ${KMER_FOLDER} --BFVFolder ${BFV_FOLDER} -b"
-GLOBAL_ARGUMENT="-k ${K} --thres ${THRES} --kmerFolder ${KMER_FOLDER} --BFVFolder ${BFV_FOLDER} -b -g ${GENE_PATH} -r ${READ_PATH}"
+GLOBAL_ARGUMENT="-k ${K} --thres ${THRES} --kmerFolder ${KMER_FOLDER} --BFVFolder ${BFV_FOLDER} -b ${DATA_PATHS}"
 
 # Step 1
 JOBID_STEP1=$(sbatch --output="${SLURM_OUT_FOLDER}/step1.txt" --mem=${MEM} --parsable run_single_step.sh STEP1 "${GLOBAL_ARGUMENT}" )
