@@ -28,8 +28,8 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     filename_kmerList = result["kmerList"].as<std::string>();
     std::string path_kmerFolder = result["kmerFolder"].as<std::string>();
     if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && path_kmerFolder.size() > 0) {
-        filename_kmerTable = path_kmerFolder + "/kmerTable_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".txt";
-        filename_kmerList =  path_kmerFolder + "/kmerList_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".txt";
+        filename_kmerTable = path_kmerFolder + "/kmerTable_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".bin";
+        filename_kmerList =  path_kmerFolder + "/kmerList_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".bin";
     }
     foldername_BFV = result["BFVFolder"].as<std::string>();
 }

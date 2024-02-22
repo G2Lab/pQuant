@@ -93,26 +93,14 @@ void Task::testKmerTable(PQuantParams &param) {
     printFileSize("kmerTableRef.txt");
     printFileSize("kmerTableRef_kmer_list.txt");
 
-    cout << "== save kmerTableRef to bin ==" << endl;
-    kmerTableRef.save_binary("kmerTableRef");
-
     cout << "print file size" << endl;
-    printFileSize("kmerTableRef.bin");
-    printFileSize("kmerTableRef_kmer_list.bin");
 
     // load and check ==
     KmerTable kmerTableRef2;
     kmerTableRef2.load("kmerTableRef.txt");
     vector<size_t> kmer_list;
     loadKmerList("kmerTableRef_kmer_list.txt", kmer_list);
-    // cout << "======== kmertable origin ========" << endl;
-    // kmerTableRef.print();
-    // cout << "======== kmertable loaded ========" << endl;
-    // kmerTableRef2.print();
-    // cout << "======== kmertable kmer list ========" << endl;
-    // for (size_t i = 0; i < kmer_list.size(); i++) {
-    //     cout << kmer_list[i] << ", ";
-    // }
+
     cout << "check kmer list ==" << endl;
     int i = 0;
     for (auto p: kmerTableRef.entropy) {
@@ -124,6 +112,28 @@ void Task::testKmerTable(PQuantParams &param) {
         i += 1;
     }
     cout << "done" << endl;
+    cout << "== save kmerTableRef to bin ==" << endl;
+    kmerTableRef.saveBinary("kmerTableRef.bin");
+    kmerTableRef.saveKmerListBinary("kmerTableRef_kmer_list.bin");
+
+    cout << "== load kmerTableRef from bin ==" << endl;
+    KmerTable kmerTableRef3;
+    kmerTableRef3.loadBinary("kmerTableRef.bin");
+    vector<size_t> kmer_list3;
+    loadKmerListBinary("kmerTableRef_kmer_list.bin", kmer_list3);
+    cout << "check kmer list ==" << endl;
+    i = 0;
+    for (auto p: kmerTableRef.entropy) {
+        if (param.verbose) {
+            cout << "p.first vs kmre_list3[" << i << "] = " << p.first << " - " << kmer_list3[i] << " (length = " << kmerTableRef.entropy.size() << ", " << kmer_list3.size() << endl;     
+        }
+        if (p.first != kmer_list3[i]) {
+            cout << "error at " << i << endl;
+            cout << p.first << " != " << kmer_list3[i] << endl;
+            return;
+        }
+        i += 1;
+    }
 }
 
 void Task::bfvBenchmark(PQuantParams &param) {

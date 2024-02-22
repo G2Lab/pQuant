@@ -629,141 +629,138 @@ void KmerTable::load(const std::string& filename) {
 }
 
 // Function to save KmerTable data to a binary file
-void KmerTable::save_binary(const std::string &filename) {
-    std::ofstream file(filename + ".bin", std::ios::binary);
-    std::ofstream file_kmer(filename + "_kmer_list.bin", std::ios::binary);
+void KmerTable::saveBinary(const std::string& filename) {
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return;
     }
-    if (!file_kmer.is_open()) {
-        std::cerr << "Error opening file: " << filename + "_kmer_list.bin" << std::endl;
-        return;
-    }
+    // Save K, thres, n_gene, and n_kmer_total as binary
+    file.write(reinterpret_cast<const char*>(&K), sizeof(K));
+    file.write(reinterpret_cast<const char*>(&thres), sizeof(thres));
+    file.write(reinterpret_cast<const char*>(&n_gene), sizeof(n_gene));
+    file.write(reinterpret_cast<const char*>(&n_kmer_total), sizeof(n_kmer_total));
+    file.write(reinterpret_cast<const char*>(&isRef), sizeof(isRef));
 
-    // Write K, thres, n_gene, and n_kmer_total
-    file.write(reinterpret_cast<char *>(&K), sizeof(K));
-    file.write(reinterpret_cast<char *>(&thres), sizeof(thres));
-    file.write(reinterpret_cast<char *>(&n_gene), sizeof(n_gene));
-    file.write(reinterpret_cast<char *>(&n_kmer_total), sizeof(n_kmer_total));
-
-    // Write geneNameIndex
+    // Save geneNameIndex as binary
     size_t geneNameIndexSize = geneNameIndex.size();
-    file.write(reinterpret_cast<char *>(&geneNameIndexSize), sizeof(geneNameIndexSize));
-    for (const auto &geneName : geneNameIndex) {
-        file.write(geneName.c_str(), geneName.size() + 1); // Include null terminator
+    file.write(reinterpret_cast<const char*>(&geneNameIndexSize), sizeof(geneNameIndexSize));
+    for (const std::string& geneName : geneNameIndex) {
+        size_t geneNameSize = geneName.size();
+        file.write(reinterpret_cast<const char*>(&geneNameSize), sizeof(geneNameSize));
+        file.write(geneName.c_str(), geneNameSize);
     }
-
-    // Write count
+    
+    // Save count as binary
     size_t countSize = count.size();
-    file.write(reinterpret_cast<char *>(&countSize), sizeof(countSize));
-    for (const auto &geneEntry : count) {
-        size_t gene = geneEntry.first;
-        file.write(reinterpret_cast<char *>(&gene), sizeof(gene));
-        size_t innerMapSize = geneEntry.second.size();
-        file.write(reinterpret_cast<char *>(&innerMapSize), sizeof(innerMapSize));
-        for (const auto &kmerEntry : geneEntry.second) {
-            size_t kmer = kmerEntry.first;
-            size_t num = kmerEntry.second;
-            file.write(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-            file.write(reinterpret_cast<char *>(&num), sizeof(num));
+    file.write(reinterpret_cast<const char*>(&countSize), sizeof(countSize));
+    for (auto& p : count) {
+        file.write(reinterpret_cast<const char*>(&p.first), sizeof(p.first));
+        size_t sizeP = p.second.size();
+        file.write(reinterpret_cast<const char*>(&sizeP), sizeof(sizeP));
+        for (auto& q : p.second) {
+            file.write(reinterpret_cast<const char*>(&q.first), sizeof(q.first));
+            file.write(reinterpret_cast<const char*>(&q.second), sizeof(q.second));
         }
     }
 
-    // Write countRead
-    size_t countReadSize = countRead.size();
-    file.write(reinterpret_cast<char *>(&countReadSize), sizeof(countReadSize));
-    for (const auto &entry : countRead) {
-        size_t kmer = entry.first;
-        size_t num = entry.second;
-        file.write(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-        file.write(reinterpret_cast<char *>(&num), sizeof(num));
+    // Save tableRef as binary
+    size_t tableRefSize = tableRef.size();
+    file.write(reinterpret_cast<const char*>(&tableRefSize), sizeof(tableRefSize));
+    for (auto& p : tableRef) {
+        file.write(reinterpret_cast<const char*>(&p.first), sizeof(p.first));
+        size_t sizeP = p.second.size();
+        file.write(reinterpret_cast<const char*>(&sizeP), sizeof(sizeP));
+        for (auto& q : p.second) {
+            file.write(reinterpret_cast<const char*>(&q.first), sizeof(q.first));
+            file.write(reinterpret_cast<const char*>(&q.second), sizeof(q.second));
+        }
     }
 
-    // Write entropy
+    // Save entropy as binary
     size_t entropySize = entropy.size();
-    file.write(reinterpret_cast<char *>(&entropySize), sizeof(entropySize));
-    for (const auto &entry : entropy) {
-        size_t kmer = entry.first;
-        float entropyValue = entry.second;
-        file.write(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-        file_kmer.write(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-        file.write(reinterpret_cast<char *>(&entropyValue), sizeof(entropyValue));
+    file.write(reinterpret_cast<const char*>(&entropySize), sizeof(entropySize));
+    for (auto& p : entropy) {
+        file.write(reinterpret_cast<const char*>(&p.first), sizeof(p.first));
+        file.write(reinterpret_cast<const char*>(&p.second), sizeof(p.second));
     }
 
-    // Write isRef
-    file.write(reinterpret_cast<char *>(&isRef), sizeof(isRef));
-
-    // Close the file
     file.close();
 }
 
-// Function to load KmerTable data from a binary file
-void KmerTable::load_binary(const std::string &filename) {
-    std::ifstream file(filename, std::ios::binary);
+void KmerTable::loadBinary(const std::string& filename) {
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Error opening file: " << filename << std::endl;
         return;
     }
 
-    // Read K, n_gene, and n_kmer_total
-    file.read(reinterpret_cast<char *>(&K), sizeof(K));
-    file.read(reinterpret_cast<char *>(&n_gene), sizeof(n_gene));
-    file.read(reinterpret_cast<char *>(&n_kmer_total), sizeof(n_kmer_total));
+    // Load K, thres, n_gene, and n_kmer_total from binary
+    file.read(reinterpret_cast<char*>(&K), sizeof(K));
+    file.read(reinterpret_cast<char*>(&thres), sizeof(thres));
+    file.read(reinterpret_cast<char*>(&n_gene), sizeof(n_gene));
+    file.read(reinterpret_cast<char*>(&n_kmer_total), sizeof(n_kmer_total));
+    file.read(reinterpret_cast<char*>(&isRef), sizeof(isRef));
 
-    // Read geneNameIndex
+    // Load geneNameIndex from binary
     size_t geneNameIndexSize;
-    file.read(reinterpret_cast<char *>(&geneNameIndexSize), sizeof(geneNameIndexSize));
+    file.read(reinterpret_cast<char*>(&geneNameIndexSize), sizeof(geneNameIndexSize));
     geneNameIndex.resize(geneNameIndexSize);
     for (size_t i = 0; i < geneNameIndexSize; ++i) {
-        std::getline(file, geneNameIndex[i], '\0'); // Read null-terminated strings
+        size_t geneNameSize;
+        file.read(reinterpret_cast<char*>(&geneNameSize), sizeof(geneNameSize));
+        std::string geneName(geneNameSize, '\0');
+        file.read(&geneName[0], geneNameSize);
+        geneNameIndex[i] = geneName;
     }
 
-    // Read count
+    // Load count from binary
     size_t countSize;
-    file.read(reinterpret_cast<char *>(&countSize), sizeof(countSize));
-    count.clear(); // Clear existing data
+    file.read(reinterpret_cast<char*>(&countSize), sizeof(countSize));
     for (size_t i = 0; i < countSize; ++i) {
-        size_t gene;
-        file.read(reinterpret_cast<char *>(&gene), sizeof(gene));
-        size_t innerMapSize;
-        file.read(reinterpret_cast<char *>(&innerMapSize), sizeof(innerMapSize));
-        count[gene] = std::map<size_t, size_t>(); // Initialize inner map
-        for (size_t j = 0; j < innerMapSize; ++j) {
-            size_t kmer, num;
-            file.read(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-            file.read(reinterpret_cast<char *>(&num), sizeof(num));
-            count[gene][kmer] = num;
+        size_t key;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        size_t mapSize;
+        file.read(reinterpret_cast<char*>(&mapSize), sizeof(mapSize));
+        std::map<size_t, size_t> map_dummy;
+        for (size_t j = 0; j < mapSize; ++j) {
+            size_t innerKey, innerValue;
+            file.read(reinterpret_cast<char*>(&innerKey), sizeof(innerKey));
+            file.read(reinterpret_cast<char*>(&innerValue), sizeof(innerValue));
+            map_dummy[innerKey] = innerValue;
         }
+        count[key] = map_dummy;
     }
 
-    // Read countRead
-    size_t countReadSize;
-    file.read(reinterpret_cast<char *>(&countReadSize), sizeof(countReadSize));
-    countRead.clear(); // Clear existing data
-    for (size_t i = 0; i < countReadSize; ++i) {
-        size_t kmer, num;
-        file.read(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-        file.read(reinterpret_cast<char *>(&num), sizeof(num));
-        countRead[kmer] = num;
+    // Load tableRef from binary
+    size_t tableRefSize;
+    file.read(reinterpret_cast<char*>(&tableRefSize), sizeof(tableRefSize));
+    for (size_t i = 0; i < tableRefSize; ++i) {
+        size_t key;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        size_t mapSize;
+        file.read(reinterpret_cast<char*>(&mapSize), sizeof(mapSize));
+        std::map<size_t, size_t> map_;
+        for (size_t j = 0; j < mapSize; ++j) {
+            size_t innerKey, innerValue;
+            file.read(reinterpret_cast<char*>(&innerKey), sizeof(innerKey));
+            file.read(reinterpret_cast<char*>(&innerValue), sizeof(innerValue));
+            map_[innerKey] = innerValue;
+        }
+        tableRef[key] = map_;
     }
 
-    // Read entropy
+    // Load entropy from binary
     size_t entropySize;
-    file.read(reinterpret_cast<char *>(&entropySize), sizeof(entropySize));
-    entropy.clear(); // Clear existing data
+    file.read(reinterpret_cast<char*>(&entropySize), sizeof(entropySize));
     for (size_t i = 0; i < entropySize; ++i) {
-        size_t kmer;
-        float entropyValue;
-        file.read(reinterpret_cast<char *>(&kmer), sizeof(kmer));
-        file.read(reinterpret_cast<char *>(&entropyValue), sizeof(entropyValue));
-        entropy[kmer] = entropyValue;
+        size_t key;
+        double value;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        file.read(reinterpret_cast<char*>(&value), sizeof(value));
+        entropy[key] = value;
     }
 
-    // Read isRef
-    file.read(reinterpret_cast<char *>(&isRef), sizeof(isRef));
-
-    // Close the file
     file.close();
 }
 
@@ -795,4 +792,45 @@ void loadKmerList(const std::string& filename, vector<size_t>& kmerList) {
         kmerList.push_back(kmer);
     } 
     file_kmer.close();
+}
+
+void KmerTable::saveKmerListBinary(const std::string& filename) {
+    std::ofstream file(filename, std::ios::out | std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
+    }
+
+    // Write the size of the entropy map
+    size_t entropySize = entropy.size();
+    file.write(reinterpret_cast<const char*>(&entropySize), sizeof(entropySize));
+
+    // Write each key-value pair in the entropy map
+    for (const auto& p : entropy) {
+        file.write(reinterpret_cast<const char*>(&p.first), sizeof(p.first));
+    }
+
+    file.close();
+}
+
+// Binary load function for entropy data
+void loadKmerListBinary(const std::string& filename, vector<size_t>& kmerList) {
+    std::ifstream file(filename, std::ios::in | std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Error opening file: " << filename << std::endl;
+        return;
+    }
+
+    // Read the size of the entropy map
+    size_t entropySize;
+    file.read(reinterpret_cast<char*>(&entropySize), sizeof(entropySize));
+
+    // Read each key-value pair and populate the entropy map
+    for (size_t i = 0; i < entropySize; ++i) {
+        size_t key;
+        file.read(reinterpret_cast<char*>(&key), sizeof(key));
+        kmerList.push_back(key);
+    }
+
+    file.close();
 }

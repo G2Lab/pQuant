@@ -41,14 +41,16 @@ public:
     void load(const std::string& filename);
     
     // Function to save KmerTable data to a binary file
-    void save_binary(const std::string& filename);
+    void saveBinary(const std::string& filename);
 
     // Function to load KmerTable data from a binary file
-    void load_binary(const std::string& filename);
+    void loadBinary(const std::string& filename);
+
+    void saveKmerListBinary(const std::string& filename);
 
     void filterGenes(size_t start, size_t end);
 };
 
 void loadKmerList(const std::string& filename, vector<size_t>& kmerList);
-
+void loadKmerListBinary(const std::string& filename, vector<size_t>& kmerList);
 #endif

@@ -1,4 +1,5 @@
 import re
+import os
 import pandas as pd
 from math import log10
 import matplotlib.pyplot as plt
@@ -21,6 +22,45 @@ def extractValueFromLine(lines, line, num, value_type):
             return pick
     else:
         return None
+
+def getResultSingleJob(job):
+    output_all = getOutputFilenames(job)
+    df1 = getResultStep1(output_all["step1"])
+    df2 = getResultStep2(output_all["step2"])
+    df3 = getResultStep3(output_all["step3"])
+    df4 = getResultStep4(output_all["step4"])
+    df5 = getResultStep5(output_all["step5"])
+    df_total = pd.concat([df1, df2, df3, meanOfStep4(df4), df5], axis=1, join='outer')
+    n_genes = df4['n_gene'].sum()
+    n_batch = len(df4['4_num_batch'])
+    df_param2 = pd.DataFrame({'job': [job], 'n_genes': [n_genes], 'num_batch': [n_batch]}, index=[0])
+    df_total = pd.concat([df_total, df_param2], axis=1)
+    return df_total
+
+def getTotalResults(jobs_list):
+    df_total = pd.DataFrame()
+    for job in jobs_list:
+        df = getResultSingleJob(job)
+        df_total = pd.concat([df_total, df], axis=0)
+    return df_total
+
+def getOutputFilenames(job):
+    OUTPUT_DIR = os.path.join(job, "slurm_out")
+    OUTPUT_DIR_STEP4 = os.path.join(OUTPUT_DIR, "step4")
+    OUTPUT_FILES_BATCH = os.listdir(OUTPUT_DIR_STEP4)
+    output_file1 = os.path.join(OUTPUT_DIR, "step1.txt")
+    output_file2 = os.path.join(OUTPUT_DIR, "step2.txt")
+    output_file3 = os.path.join(OUTPUT_DIR, "step3.txt")
+    output_file5 = os.path.join(OUTPUT_DIR, "step5.txt")
+    output_file4 = [os.path.join(OUTPUT_DIR_STEP4, f) for f in OUTPUT_FILES_BATCH]
+    output_all = {
+        "step1": output_file1,
+        "step2": output_file2,
+        "step3": output_file3,
+        "step4": output_file4,
+        "step5": output_file5
+    }
+    return output_all
 
 def getFileSizeFromLine(line):
     equal_sign_index = line.index('=')

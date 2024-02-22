@@ -23,8 +23,8 @@ void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
     // save kmerTable & kmerList to file
     cout << "=== save kmerTable & kmerList to file ===" << endl;
     auto start_time_save = std::chrono::high_resolution_clock::now();
-    kmerTable.save(param.filename_kmerTable);
-    kmerTable.saveKmerList(param.filename_kmerList);
+    kmerTable.saveBinary(param.filename_kmerTable);
+    kmerTable.saveKmerListBinary(param.filename_kmerList);
     auto end_time_save = std::chrono::high_resolution_clock::now();
     auto duration_save = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_save - start_time_save).count();
     std::cout << "save duration = " << duration_save << " ms" << std::endl;
@@ -178,7 +178,7 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     std::cout << "=== load kmerList ===" << std::endl;
     auto start_time_kmerList = std::chrono::high_resolution_clock::now();
     vector<size_t> kmer_list;
-    loadKmerList(param.filename_kmerList, kmer_list);
+    loadKmerListBinary(param.filename_kmerList, kmer_list);
     auto end_time_kmerList = std::chrono::high_resolution_clock::now();
     auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
     std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
@@ -304,7 +304,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
     KmerTable kmerTableRef;
     vector<size_t> kmer_list;
-    kmerTableRef.load(param.filename_kmerTable);
+    kmerTableRef.loadBinary(param.filename_kmerTable);
     if (param.verbose) {
         kmerTableRef.print();
     }
@@ -324,7 +324,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     // read kmerList
     std::cout << "=== load kmerList ===" << std::endl;
     auto start_time_kmerList = std::chrono::high_resolution_clock::now();
-    loadKmerList(param.filename_kmerList, kmer_list);
+    loadKmerListBinary(param.filename_kmerList, kmer_list);
     auto end_time_kmerList = std::chrono::high_resolution_clock::now();
     auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
     std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
@@ -350,35 +350,20 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     int total_kmers = 0;
     for (size_t g = start; g < end; g++) {
         total_kmers += kmerTableRef.count[g].size();
+        pt_ref[g - start].resize(n_vec_per_gene);
     }
     cout << "total kmers = " << total_kmers << endl;
     for (size_t g = start; g < end; g++) {
-        pt_ref[g - start].resize(n_vec_per_gene);
         vector<vector<int64_t>> plain_vec(n_vec_per_gene, vector<int64_t>(n_slots, 0));
         cout << "plain_vec size = " << plain_vec.size() << " : " << plain_vec[0].size() << endl;
         size_t num_vec, num_slot;
-        map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
-        for (auto &kmerEntry: geneEntry) {
-            if (param.filename_kmerTable.size() == 0) {
-                num_vec = kmerEntry.first / n_slots;
-                num_slot = kmerEntry.first % n_slots;
-            } else {
-                // size_t index = std::distance(kmer_list.begin(), std::find(kmer_list.begin(), kmer_list.end(), kmerEntry.first));
-                // // pass if p.first is not in kmer_list
-                // if (index == kmer_list.size()) {
-                //     // cout << "index = " << index << " : not found" << endl;
-                //     continue;
-                // }
-                size_t index;
-                bool search = binary_search_util(kmer_list, kmerEntry.first, index);
-                if (!search) {
-                    continue;
-                    // cout << "search " << kmerEntry.first << " : not found" << endl;
-                }
-                num_vec = index / n_slots;
-                num_slot = index % n_slots;
-                // cout << "search " << kmerEntry.first << " : " << index << " : " << num_vec << " : " << num_slot << endl;
+        for (auto &kmerEntry: kmerTableRef.count[g]) {
+            size_t index;
+            if (!binary_search_util(kmer_list, kmerEntry.first, index)) {
+                continue;
             }
+            num_vec = index / n_slots;
+            num_slot = index % n_slots;
             
             if (num_slot == 0) {
                 plain_vec[num_vec][num_slot] += kmerEntry.second;
@@ -516,7 +501,7 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
     std::cout << "=== read kmerTable ===" << std::endl;
     auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
     KmerTable kmerTableRef;
-    kmerTableRef.load(param.filename_kmerTable);
+    kmerTableRef.loadBinary(param.filename_kmerTable);
     if (param.verbose) {
         kmerTableRef.print();
     }
