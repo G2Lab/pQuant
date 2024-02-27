@@ -147,7 +147,7 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
         std::cerr << "I cannot read serialization from " << filename_context << std::endl;
         return;
     }
-    std::cout << "The cryptocontext has been deserialized." << std::endl;
+    std::cout << "The cryptocontext has been deserialized from " << filename_context << std::endl;
 
     PrivateKey<DCRTPoly> sk;
     if (Serial::DeserializeFromFile(filename_private, sk, SerType::BINARY) == false) {
@@ -341,21 +341,43 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     std::cout << "n_vec_per_gene = " << n_vec_per_gene << std::endl;
     std::cout << "n_kmer_total = " << kmerTableRef.n_kmer_total << std::endl;
     std::cout << std::endl;
+    
+    Ciphertext_1d ct(n_vec_per_gene);
 
+    // debug, don't know why this is needed
+    vector<int64_t> dummy_vec(n_slots, 0);
+    Plaintext dummy = cc->MakeCoefPackedPlaintext(dummy_vec);
+
+    // read ctxtRead
+    std::cout << "=== read ctxtRead ===" << std::endl;
+    auto start_time_ctxtRead = std::chrono::high_resolution_clock::now();
+    cout << "  ======== readreadread ======" << endl;
+    for (size_t r = 0; r < n_vec_per_gene; r++) {
+        if (!Serial::DeserializeFromFile(param.foldername_BFV + "/ctxt_read/ct_" + std::to_string(r) + ".txt", ct[r], SerType::BINARY)) {
+            std::cerr << "Error reading serialization of the ctxtRead" << std::endl;
+            return;
+        }
+        if (param.progress_bar)
+            print_progress_bar("read ctxtRead", r, n_vec_per_gene, start_time_ctxtRead);
+    }
+    auto end_time_ctxtRead = std::chrono::high_resolution_clock::now();
+    auto duration_ctxtRead = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_ctxtRead - start_time_ctxtRead).count();
+    std::cout << "read ctxtRead duration = " << duration_ctxtRead << " ms" << std::endl;
+    std::cout << std::endl;
+    
     // encode kmerTable
     std::cout << "=== encode kmerTable ===" << std::endl;
-    auto start_time_encode = std::chrono::high_resolution_clock::now();
-    Plaintext_2d pt_ref(end - start);
+    auto start_time_encode_and_mult = std::chrono::high_resolution_clock::now();
+    // Plaintext_2d pt_ref(end - start, Plaintext_1d(n_vec_per_gene));
     int progress = 0;
-    int total_kmers = 0;
-    for (size_t g = start; g < end; g++) {
-        total_kmers += kmerTableRef.count[g].size();
-        pt_ref[g - start].resize(n_vec_per_gene);
-    }
-    cout << "total kmers = " << total_kmers << endl;
+    // size_t total_kmer = 0;
+    // for (size_t g = start; g < end; g++) {
+    //     total_kmer += kmerTableRef.count[g].size();
+    // }
+    Ciphertext_1d ct_out(n_genes);
     for (size_t g = start; g < end; g++) {
         vector<vector<int64_t>> plain_vec(n_vec_per_gene, vector<int64_t>(n_slots, 0));
-        cout << "plain_vec size = " << plain_vec.size() << " : " << plain_vec[0].size() << endl;
+        Plaintext_1d pt_ref(n_vec_per_gene);
         size_t num_vec, num_slot;
         for (auto &kmerEntry: kmerTableRef.count[g]) {
             size_t index;
@@ -370,69 +392,26 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
             } else {
                 plain_vec[num_vec][n_slots - num_slot] -= kmerEntry.second;
             }
-            // update progress bar
-            if (param.progress_bar) {
-                print_progress_bar("encode reference", progress, total_kmers, start_time_encode);
-            }
             progress += 1;
         }
-
         for (size_t i = 0; i < n_vec_per_gene; i++) {
-            pt_ref[g - start][i] = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            pt_ref[i] = cc->MakeCoefPackedPlaintext(plain_vec[i]);
         }
-        plain_vec.clear();
-    }
-    auto end_time_encode = std::chrono::high_resolution_clock::now();
-    auto duration_encode = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encode - start_time_encode).count();
-    std::cout << std::endl;
-    std::cout << "encode reference duration = " << duration_encode << " ms" << std::endl;
-
-    // read ctxtRead
-    std::cout << "=== read ctxtRead ===" << std::endl;
-    auto start_time_ctxtRead = std::chrono::high_resolution_clock::now();
-    Ciphertext_1d ct;
-    std::string filename_ctxtRead = param.foldername_BFV + "/ctxt_read";
-    for (size_t i = 0; i < n_vec_per_gene; i++) {
-        std::string filename_ctxtRead_i = filename_ctxtRead + "/ct_" + std::to_string(i) + ".txt";
-        Ciphertext<DCRTPoly> ctxt;
-        if (!Serial::DeserializeFromFile(filename_ctxtRead_i, ctxt, SerType::BINARY)) {
-            std::cerr << "Error reading serialization of the ctxtRead from " << filename_ctxtRead_i << std::endl;
-            return;
-        }
-        ct.push_back(ctxt);
-        if (param.progress_bar)
-            print_progress_bar("read ctxtRead", i, n_vec_per_gene, start_time_ctxtRead);
-    }
-    auto end_time_ctxtRead = std::chrono::high_resolution_clock::now();
-    auto duration_ctxtRead = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_ctxtRead - start_time_ctxtRead).count();
-    std::cout << "read ctxtRead duration = " << duration_ctxtRead << " ms" << std::endl;
-    std::cout << std::endl;
-
-    // compute inner product
-    cout << "MEMORY CHECK::before multCtxt" << endl;
-    printMemoryUsage();
-    cout << endl;
-    
-    std::cout << "=== compute inner product ===" << std::endl;
-    auto start_time_mult = std::chrono::high_resolution_clock::now();
-    Ciphertext_1d ct_out(n_genes);
-    for (size_t g = start; g < end; g++) {   
         for (size_t i = 0; i < ct.size(); i++) {
             if (i == 0) {
-                ct_out[g - start] = cc->EvalMult(ct[0], pt_ref[g - start][i]);
+                ct_out[g - start] = cc->EvalMult(ct[0], pt_ref[i]);
             } else {
-                Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], pt_ref[g - start][i]);
+                Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], pt_ref[i]);
                 cc->EvalAddInPlace(ct_out[g - start], ctxt);
             }
-
             // update progress bar
             if (param.progress_bar)
-                print_progress_bar("multCtxtByEncodedRef", g * ct.size() + i, n_genes * ct.size(), start_time_mult);
+                print_progress_bar("multCtxtByEncodedRef", g * ct.size() + i, n_genes * ct.size(), start_time_encode_and_mult);
         }
     }
-    auto end_time_mult = std::chrono::high_resolution_clock::now();
-    auto duration_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_mult - start_time_mult).count();
-    std::cout << "multCtxtByEncodedRef duration = " << duration_mult << " ms" << std::endl;
+    auto end_time_encode_and_mult = std::chrono::high_resolution_clock::now();
+    auto duration_encode_end_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encode_and_mult - start_time_encode_and_mult).count();
+    std::cout << "multCtxtByEncodedRef duration = " << duration_encode_end_mult << " ms" << std::endl;
     std::cout << std::endl;
 
     // serialize ct_out
@@ -460,11 +439,10 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     std::cout << " === Duration summaries ===" << endl;
     std::cout << "load kmerTable duration = " << duration_kmerTable << " ms" << endl;
     std::cout << "load kmerList duration = " << duration_kmerList << " ms" << endl;
-    std::cout << "encode reference duration = " << duration_encode << " ms" << endl;
     std::cout << "read ctxtRead duration = " << duration_ctxtRead << " ms" << endl;
-    std::cout << "multCtxtByEncodedRef duration = " << duration_mult << " ms" << std::endl;
+    std::cout << "encode_and_mult duration = " << duration_encode_end_mult << " ms" << std::endl;
     std::cout << "serializeCtxtOut duration = " << duration_serialize << " ms" << std::endl;
-    std::cout << "total duration = " << duration_kmerTable + duration_kmerList + duration_encode + duration_ctxtRead + duration_mult + duration_serialize << " ms" << std::endl;
+    std::cout << "total duration = " << duration_kmerTable + duration_kmerList + duration_encode_end_mult + duration_ctxtRead + duration_serialize << " ms" << std::endl;
 
     std::cout << "single ctxt size" << endl;
     printFileSize(filename_ctxtOut + "/ct_" + to_string(start) + ".txt");
