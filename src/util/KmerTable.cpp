@@ -31,7 +31,8 @@ string sequenceReverseCompliment(string nt) {
         } else if (nt[i] == 'T') {
             ans = 'A' + ans;
         } else {
-            return "";
+            // if not AGCT, then continue with the same character
+            ans = nt[i] + ans;
         }
     }
     return ans;
@@ -55,9 +56,14 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 
         auto start_time = std::chrono::high_resolution_clock::now();
         map<size_t, map<size_t, size_t>> kmer_occurance;
-        // map<size_t, map<size_t, size_t>> kmer_based_table;
         // count kmers in gene
-        for (size_t i = 0; i < gene.size(); i++) {
+        size_t start = 0;
+        size_t end = gene.size();
+        if (param.gene_start >= 0 && param.gene_end >= 0) {
+            start = param.gene_start;
+            end = param.gene_end;
+        }
+        for (size_t i = start; i < end; i++) {
             // gene i
             map<size_t, size_t> gene_kmer_count;
             for (size_t j = 0; j < static_cast<size_t>(gene[i].getNumSeq()); j++) {
@@ -78,7 +84,9 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                 }
 
                 // reverse compliment
+                // cout << "seq = " << seq << endl;
                 string seq_rc = sequenceReverseCompliment(seq);
+                // cout << "seq_rc = " << seq_rc << endl;
                 for (size_t k = 0; k < seq_rc.size() - K + 1; k++) {
                     string kmer = seq_rc.substr(k, K);
                     long num = convertKmerToNum(kmer);
@@ -89,13 +97,15 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                     kmer_occurance[num][i] += 1;
                 }
             }
-
             // concatenations
             for (size_t j = 0; j < static_cast<size_t>(gene[i].getNumSeq()); j++) {
                 for (size_t k = j + 1; k < static_cast<size_t>(gene[i].getNumSeq()); k++) {
                     string seq_j = gene[i].getSeq(j);
                     string seq_k = gene[i].getSeq(k);
                     string seq_combined;
+                    if (seq_j.size() == 0 || seq_k.size() == 0) {
+                        continue;
+                    }
                     if (seq_j.size() >= static_cast<size_t>(K) && seq_k.size() >= static_cast<size_t>(K)) {
                         seq_combined = seq_j.substr(seq_j.size() - K + 1, K - 1) + seq_k.substr(0, K - 1);
                     } else if (seq_j.size() >= static_cast<size_t>(K)) {
@@ -138,6 +148,9 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             gene_kmer_count.clear();
 
             print_progress_bar("countKmersPerGene", i, gene.size(), start_time);
+            if (i % (gene.size() / 100) == 0) {
+                cout << "kmer num = " << kmer_occurance.size() << endl;
+            }
         }
 
         std::map<size_t, float> entropy_total;
