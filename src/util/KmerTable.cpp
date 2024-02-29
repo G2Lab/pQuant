@@ -84,9 +84,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                 }
 
                 // reverse compliment
-                // cout << "seq = " << seq << endl;
                 string seq_rc = sequenceReverseCompliment(seq);
-                // cout << "seq_rc = " << seq_rc << endl;
                 for (size_t k = 0; k < seq_rc.size() - K + 1; k++) {
                     string kmer = seq_rc.substr(k, K);
                     long num = convertKmerToNum(kmer);
@@ -147,10 +145,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             count_total.insert(make_pair(i, gene_kmer_count));
             gene_kmer_count.clear();
 
-            print_progress_bar("countKmersPerGene", i, gene.size(), start_time);
-            if (i % (gene.size() / 100) == 0) {
-                cout << "kmer num = " << kmer_occurance.size() << endl;
-            }
+            print_progress_bar("countKmersPerGene", i, end - start, start_time);
         }
 
         std::map<size_t, float> entropy_total;
