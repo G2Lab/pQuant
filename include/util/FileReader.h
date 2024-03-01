@@ -18,6 +18,8 @@ using namespace std;
 
 void readFastaFile(const string &filename, vector<Sequence>& refs_seq);
 
+void readFastQFile(const string& filename, vector<Sequence>& seq_vec);
+
 // void saveKmerTable(const string &filename, const KmerTable& kmerTable);
 
 // void parseJson(const std::string& jsonFile, KmerTable& kmerTable, PQuantParams& param);

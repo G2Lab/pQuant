@@ -163,7 +163,7 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     cout << "=== read reads and compute kmerTableRead ===" << endl;
     auto start_time_read = std::chrono::high_resolution_clock::now();
     vector<Sequence> reads_seq;
-    readFastaFile(param.filename_read, reads_seq);
+    readFastQFile(param.filename_read, reads_seq);
     KmerTable kmerTableRead(reads_seq, param, false);
     reads_seq.clear();
     auto end_time_read = std::chrono::high_resolution_clock::now();

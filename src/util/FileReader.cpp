@@ -13,7 +13,6 @@ void readFastaFile(const string& filename, vector<Sequence>& seq_vec) {
 
     // Keep track of Sequence objects for each gene name
     unordered_map<string, Sequence> gene_to_seq;
-
     while (getline(file, line)) {
         if (line.empty()) {
             continue;
@@ -92,8 +91,8 @@ void readFastQFile(const string& filename, vector<Sequence>& seq_vec) {
         line_number++;
 
         if (line_number % 4 == 2) {
-            auto& seq = gene_to_seq[0];
-            seq.setGeneName(0);
+            auto& seq = gene_to_seq["gene"];
+            seq.setGeneName("gene");
             seq.addSeq(line);
 
         }
