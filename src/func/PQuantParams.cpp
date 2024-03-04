@@ -1,19 +1,35 @@
 #include "func/PQuantParams.h"
 
 PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
-    if (result["gene"].as<std::string>().size() > 0 && result["read"].as<std::string>().size() > 0) {
-        this->filename_read = result["read"].as<std::string>();
-        this->filename_ref = result["gene"].as<std::string>();
-    } else if (result["data"].as<std::string>().size() > 0) {
-        std::string dataset = result["data"].as<std::string>();
-        this->filename_read = datasetMap[dataset].first;
-        this->filename_ref = datasetMap[dataset].second;
-    } else {
-        std::cout << "Please specify dataset or gene and read path" << std::endl;
+    if (result["gene"].as<std::string>().size() == 0 && result["read"].as<std::string>().size() == 0 && result["data"].as<std::string>().size() == 0) {
+        std::cerr << "Please specify dataset or gene and read path" << std::endl;
         exit(0);
     }
+    if (result["gene"].as<std::string>().size() == 0 && result["read"].as<std::string>().size() == 0 && result["data"].as<std::string>().size() > 0) {
+        // output error if result["data"] is not in datasetMap key list
+        this->data = result["data"].as<std::string>();
+        if (datasetMap.find(this->data) == datasetMap.end()) {
+            std::cerr << "Invalid dataset: " << this->data << std::endl;
+            std::cerr << "add gene & read paths, or try valid dataset name" << std::endl;
+            exit(0);
+        }
+        this->filename_read = datasetMap[this->data].first;
+        this->filename_ref = datasetMap[this->data].second;
+    } else {
+        if (result["gene"].as<std::string>().size() > 0) {
+            this->filename_ref = result["gene"].as<std::string>();    
+        }
+        if (result["read"].as<std::string>().size() > 0) {
+            this->filename_read = result["read"].as<std::string>();
+        }
+        if (result["data"].as<std::string>().size() > 0) {
+            this->data = result["data"].as<std::string>();
+        } else {
+            this->data = "data";
+        }
+    }
     
-    this->data = result["data"].as<std::string>();
+    
     this->thres = result["thres"].as<float>();
     this->k = result["kmer"].as<int>();
     this->target = result["target"].as<std::string>();
@@ -24,14 +40,14 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->gene_end = result["gene_end"].as<int>();
     this->memory = result["divide_encode_mult"].as<bool>();
 
-    filename_kmerTable = result["kmerTable"].as<std::string>();
-    filename_kmerList = result["kmerList"].as<std::string>();
-    std::string path_kmerFolder = result["kmerFolder"].as<std::string>();
-    if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && path_kmerFolder.size() > 0) {
-        filename_kmerTable = path_kmerFolder + "/kmerTable_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".bin";
-        filename_kmerList =  path_kmerFolder + "/kmerList_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".bin";
+    filename_kmerTable = result["kmer_table"].as<std::string>();
+    filename_kmerList = result["kmer_list"].as<std::string>();
+    std::string path_kmer_folder = result["kmer_folder"].as<std::string>();
+    if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && path_kmer_folder.size() > 0) {
+        filename_kmerTable = path_kmer_folder + "/kmertable_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".bin";
+        filename_kmerList =  path_kmer_folder + "/kmerlist_" + data + "_" + std::to_string(k) + "_" + std::to_string(thres) + ".bin";
     }
-    foldername_BFV = result["BFVFolder"].as<std::string>();
+    foldername_BFV = result["bfv_folder"].as<std::string>();
 }
 
 void PQuantParams::print() {

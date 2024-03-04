@@ -190,9 +190,27 @@ void Task::bfvBenchmark(PQuantParams &param) {
     TIC(t);
     for (int i = 0; i < iteration; i++) {
         plain = cryptoContext->MakeCoefPackedPlaintext(plain_vec);
+        // plain = cryptoContext->MakePackedPlaintext(plain_vec);
     }
     processingTime = TOC(t);
     std::cout << "encode time: " << processingTime / iteration << "ms" << std::endl;
+    // DCRTPoly poly = plain->GetElement<DCRTPoly>();
+    // std::stringstream s;
+    // DCRTPoly deser;
+    // Serial::Serialize(poly, s, SerType::JSON);
+    // cout << "serializetion confirmed" << endl;
+    // Serial::Deserialize(deser, s, SerType::JSON);
+    // cout << "deserializetion confirmed" << endl;
+    // std::ofstream f;
+    // f.open("test.txt");
+    // f << s.str();
+    // f.close();
+    // cout << "save confirmed" << endl;
+    // cout << "plain" << endl;
+    // cout << poly << endl;
+    // cout << "deserialized" << endl;
+    // cout << deser << endl;
+    // Plaintext plain_deser = CryptoContext::MakePlaintext(PACKED_ENCODING, cryptoContext, deser);
 
     //encrypt
     Ciphertext<DCRTPoly> ciphertext, ciphertextMult;
