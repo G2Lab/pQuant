@@ -16,6 +16,7 @@ OpenFHE is a public library that supports various homomorphic encryption schemes
 ```bash
     git clone https://github.com/openfheorg/openfhe-development.git
     cd openfhe-development
+    git checkout v1.1.2
     mkdir build
     cd build
     cmake .. -DCMAKE_INSTALL_PREFIX=../../openfhe #install in local directory
