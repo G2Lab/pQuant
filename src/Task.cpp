@@ -297,25 +297,65 @@ void Task::run_all(PQuantParams &param) {
     KeyPair<DCRTPoly> keyPair = cryptoContext->KeyGen();
     cryptoContext->EvalMultKeysGen(keyPair.secretKey);
 
-    KmerTable kmerTableRef;
+    KmerTable *kmerTableGen;
     start_time = std::chrono::high_resolution_clock::now();
     if (param.filename_kmerTable.size() > 0) {
         cout << "=== read kmerTableRef from json ===" << endl;
-        kmerTableRef.load(param.filename_kmerTable);
+        kmerTableGen = new KmerTable();
+        kmerTableGen->load(param.filename_kmerTable);
     } else {
         cout << "=== read refs_seq ===" << endl;
         vector<Sequence> refs_seq;
         readFastaFile(param.filename_ref, refs_seq);
-        kmerTableRef = KmerTable(refs_seq, param, true);
+        kmerTableGen = new KmerTable(refs_seq, param, true);
         refs_seq.clear();
     }
     if (param.verbose) {
-        kmerTableRef.print();
+        kmerTableGen->print();
     }
     end_time = std::chrono::high_resolution_clock::now();
     auto duration_ref = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     cout << "computeKmerTable duration = " << duration_ref << " ms" << endl;
     
+    cout << " === Save & Load === " << endl;
+    cout << "save kmerTableGen to txt" << endl;
+    if (param.json_format) {
+        kmerTableGen->save("kmerTableGen.txt");
+        kmerTableGen->saveKmerList("kmerTableGen_kmer_list.txt");
+    } else {
+        kmerTableGen->saveBinary("kmerTableGen.txt");
+        kmerTableGen->saveKmerListBinary("kmerTableGen_kmer_list.txt");
+    }
+    
+
+    cout << "print file size" << endl;
+    printFileSize("kmerTableGen.txt");
+    printFileSize("kmerTableGen_kmer_list.txt");
+
+    cout << "load kmerTableRef from txt" << endl;
+    KmerTable *kmerTableRef;
+    kmerTableRef = new KmerTable();
+    vector<size_t> kmer_list;
+    if (param.json_format) {
+        kmerTableRef->load("kmerTableGen.txt");
+        loadKmerList("kmerTableGen_kmer_list.txt", kmer_list);
+    } else {
+        kmerTableRef->loadBinary("kmerTableGen.txt");
+        loadKmerListBinary("kmerTableGen_kmer_list.txt", kmer_list);
+    }
+    
+
+    cout << "check kmer list ==" << endl;
+    int i = 0;
+    for (auto p: kmerTableRef->entropy) {
+        if (p.first != kmer_list[i]) {
+            cout << "error at " << i << endl;
+            cout << p.first << " != " << kmer_list[i] << endl;
+            return;
+        }
+        i += 1;
+    }
+
     
     vector<Sequence> reads_seq;
     cout << "=== read reads_seq ===" << endl;
@@ -331,32 +371,32 @@ void Task::run_all(PQuantParams &param) {
 
     // remove all but x gene (debugging)
     if (param.debug_n_gene > 0) {
-        kmerTableRef.n_gene = param.debug_n_gene;
+        kmerTableRef->n_gene = param.debug_n_gene;
         // erase all but debug_n_gene
-        kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.debug_n_gene), kmerTableRef.geneNameIndex.end());
+        kmerTableRef->geneNameIndex.erase(std::next(kmerTableRef->geneNameIndex.begin(), param.debug_n_gene), kmerTableRef->geneNameIndex.end());
 
         cout << "Used gene list" << endl;
-        for (size_t i = 0; i < kmerTableRef.geneNameIndex.size(); i++) {
-            cout << kmerTableRef.geneNameIndex[i] << endl;
+        for (size_t i = 0; i < kmerTableRef->geneNameIndex.size(); i++) {
+            cout << kmerTableRef->geneNameIndex[i] << endl;
         }
     } else if (param.gene_start >= 0 && param.gene_end >= 0) {
         // erase all but gene_start to gene_end
-        kmerTableRef.n_gene = param.gene_end - param.gene_start + 1;
-        kmerTableRef.geneNameIndex.erase(std::next(kmerTableRef.geneNameIndex.begin(), param.gene_end + 1), kmerTableRef.geneNameIndex.end());
-        kmerTableRef.geneNameIndex.erase(kmerTableRef.geneNameIndex.begin(), std::next(kmerTableRef.geneNameIndex.begin(), param.gene_start));
+        kmerTableRef->n_gene = param.gene_end - param.gene_start + 1;
+        kmerTableRef->geneNameIndex.erase(std::next(kmerTableRef->geneNameIndex.begin(), param.gene_end + 1), kmerTableRef->geneNameIndex.end());
+        kmerTableRef->geneNameIndex.erase(kmerTableRef->geneNameIndex.begin(), std::next(kmerTableRef->geneNameIndex.begin(), param.gene_start));
         cout << "Used gene list" << endl;
-        for (size_t i = 0; i < kmerTableRef.geneNameIndex.size(); i++) {
-            cout << kmerTableRef.geneNameIndex[i] << endl;
+        for (size_t i = 0; i < kmerTableRef->geneNameIndex.size(); i++) {
+            cout << kmerTableRef->geneNameIndex[i] << endl;
         }
     }
     
     // check kmerTable lengths
     cout << endl;
     cout << endl;
-    cout << "kmerTableRef.count.size() = " << kmerTableRef.count.size() << endl;
+    cout << "kmerTableRef->count.size() = " << kmerTableRef->count.size() << endl;
     cout << "kmerTableRead.countRead.size() = " << kmerTableRead.countRead.size() << endl;
-    cout << "kmerTableRef.entropy.size() = " << kmerTableRef.entropy.size() << endl;
-    cout << "kmerRef.n_gene = " << kmerTableRef.n_gene << endl;
+    cout << "kmerTableRef->entropy.size() = " << kmerTableRef->entropy.size() << endl;
+    cout << "kmerRef.n_gene = " << kmerTableRef->n_gene << endl;
     cout << endl;
     
     start_time = std::chrono::high_resolution_clock::now();
@@ -368,7 +408,7 @@ void Task::run_all(PQuantParams &param) {
         encryptReadKmer(kmerTableRead, ct, cryptoContext, keyPair, param);
     } else {
         cout << "run sparse version" << endl;
-        encryptReadSparse(ct, kmerTableRead, kmerTableRef, cryptoContext, keyPair, param);
+        encryptReadSparse(ct, kmerTableRead, *kmerTableRef, cryptoContext, keyPair, param);
     }
     cout << endl;
     cout << "ct.size() = " << ct.size() << endl;
@@ -384,7 +424,7 @@ void Task::run_all(PQuantParams &param) {
         cout << endl;
         cout << " === run encodeRefKmer === " << endl;
         Plaintext_2d pt_ref;
-        encodeRefKmer(kmerTableRef, pt_ref, cryptoContext, keyPair, param);
+        encodeRefKmer(*kmerTableRef, pt_ref, cryptoContext, keyPair, param);
         cout << endl;
         cout << "pt_ref.size() = " << pt_ref.size() << endl;
         cout << endl;
@@ -405,7 +445,7 @@ void Task::run_all(PQuantParams &param) {
         start_time = std::chrono::high_resolution_clock::now();
         cout << endl;
         cout << " === run multCtxtByKmerTableRefFromSerial === " << endl;
-        multCtxtByKmerTableRef(ct_out, ct, kmerTableRef, cryptoContext, param);
+        multCtxtByKmerTableRef(ct_out, ct, *kmerTableRef, cryptoContext, param);
         cout << endl;
         cout << "ct_out.size = " << ct_out.size() << endl;
         cout << endl;
@@ -430,7 +470,7 @@ void Task::run_all(PQuantParams &param) {
     cout << endl;
     for (size_t i = 0; i < pt_sum.size(); i++) {
         auto plain = pt_sum[i]->GetCoefPackedValue();
-        cout << kmerTableRef.geneNameIndex[i] << " : " << plain[0] << endl;
+        cout << kmerTableRef->geneNameIndex[i] << " : " << plain[0] << endl;
     }
     cout << endl;
     
@@ -441,7 +481,7 @@ void Task::run_all(PQuantParams &param) {
     // cout << "pt_out.size() = " << pt_out.size() << endl;
 
     cout << "== Outputs summary == " << endl;
-    cout << "kmerTableRef.entropy.size() = " << kmerTableRef.entropy.size() << endl;
+    cout << "kmerTableRef->entropy.size() = " << kmerTableRef->entropy.size() << endl;
     printMemoryUsage();
     cout << endl;
     cout << "== duration summary ==" << endl;

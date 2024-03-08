@@ -43,7 +43,6 @@ void encryptReadKmer(KmerTable &kmerTableRead, Ciphertext_1d &ct, CryptoContext<
     std::cout << "n_plain_vecs = " << n_plain_vecs << std::endl;
     vector<vector<int64_t>> plain_vec;
 
-    cout << "check" << endl;
     size_t i = 0;
     auto start_time = std::chrono::high_resolution_clock::now();
     for (auto &p : kmerTableRead.countRead) {
@@ -58,7 +57,6 @@ void encryptReadKmer(KmerTable &kmerTableRead, Ciphertext_1d &ct, CryptoContext<
         print_progress_bar("crate plain vec", i, kmerTableRead.countRead.size(), start_time);
         i += 1;
     }
-    cout << "check" << endl;
 
     start_time = std::chrono::high_resolution_clock::now();
     for (size_t i = 0; i < n_plain_vecs; i++) {

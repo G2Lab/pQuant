@@ -8,7 +8,7 @@
 #SBATCH --mail-user=shong@nygenome.org   # Specify your email address
 
 # Navigate to the directory containing your executable
-cd /gpfs/commons/groups/gursoy_lab/shong/Github/pQuant_enc/job_submit
+cd $(pwd)
 
 echo "SLURM_JOB_ID: ${SLURM_JOB_ID}"
 # Define paths and arguments
@@ -104,8 +104,9 @@ mkdir -p ${BFV_FOLDER}
 mkdir -p ${SLURM_OUT_FOLDER}
 mkdir -p ${STEP4_FOLDER}
 
-# GLOBAL_ARGUMENT="-d ${DATA} -k ${K} --thres ${THRES} --kmerFolder ${KMER_FOLDER} --BFVFolder ${BFV_FOLDER} -b"
-GLOBAL_ARGUMENT="-k ${K} --thres ${THRES} --kmerFolder ${KMER_FOLDER} --BFVFolder ${BFV_FOLDER} -b ${DATA_PATHS}"
+GLOBAL_ARGUMENT="-k ${K} --thres ${THRES} --kmer_folder ${KMER_FOLDER} --bfv_folder ${BFV_FOLDER} -b -j ${DATA_PATHS}"
+
+echo "GLOBAL_ARGUMENT: ${GLOBAL_ARGUMENT}"
 
 # Step 1
 JOBID_STEP1=$(sbatch --output="${SLURM_OUT_FOLDER}/step1.txt" --mem=${MEM} --parsable run_single_step.sh STEP1 "${GLOBAL_ARGUMENT}" )
