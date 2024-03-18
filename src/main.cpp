@@ -22,7 +22,6 @@ int main(int argc, char **argv) {
         ("k,kmer", "Param kmer", cxxopts::value<int>()->default_value("15"))
         ("v,verbose", "enable verbose", cxxopts::value<bool>()->default_value("false"))
         ("b,bar", "print progress bar", cxxopts::value<bool>()->default_value("false"))
-        ("j,json", "use json format for kmer table", cxxopts::value<bool>()->default_value("false"))
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
         ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value("0.00001"))
@@ -30,6 +29,8 @@ int main(int argc, char **argv) {
         ("kmer_table", "save/load kmerTable from file path", cxxopts::value<std::string>()->default_value(""))
         ("kmer_list", "save/load kmerList from file path", cxxopts::value<std::string>()->default_value(""))
         ("bfv_folder", "save/load BFV HE keys from folder path; filename is automatically set (pk, sk, params, etc)", cxxopts::value<std::string>()->default_value(""))
+        ("ctxt_read_folder", "path to save encoded and encrypted reads", cxxopts::value<std::string>()->default_value(""))
+        ("ctxt_out_folder", "path to save results of step 4", cxxopts::value<std::string>()->default_value(""))
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
@@ -61,12 +62,7 @@ int main(int argc, char **argv) {
         MainAlgorithmSet::computeInnerProductBatch(param);
     } else if (param.target.compare("STEP5") == 0) {
         MainAlgorithmSet::decryptAndReturnGeneVector(param);
-    } else if (param.target.compare("main") == 0) {
-        MainAlgorithmSet::generateKmerTableFromReference(param);
-        MainAlgorithmSet::keyGenBFVandSerialize(param);
-        MainAlgorithmSet::encodeAndEncrypt(param);
-        MainAlgorithmSet::computeInnerProductBatch(param);
-        MainAlgorithmSet::decryptAndReturnGeneVector(param);
+    } else if (param.target.compare("argument") == 0) {
     } else if (param.target.compare("fasta") == 0) {
         Task::readFastaFiles(param);
     } else if (param.target.compare("table") == 0) {
