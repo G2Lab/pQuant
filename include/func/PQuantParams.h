@@ -31,6 +31,7 @@ class PQuantParams {
 
     //debug
     bool verbose;
+    bool json_format;
     int debug_n_gene;
     int gene_start;
     int gene_end;

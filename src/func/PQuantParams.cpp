@@ -38,10 +38,8 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->debug_n_gene = result["debug_n_gene"].as<int>();
     this->gene_start = result["gene_start"].as<int>();
     this->gene_end = result["gene_end"].as<int>();
-    this->memory = result["divide_encode_mult"].as<bool>();
+    this->json_format = result["json"].as<bool>();
 
-    filename_kmerTable = result["kmer_table"].as<std::string>();
-    filename_kmerList = result["kmer_list"].as<std::string>();
     std::string path_kmer_folder = result["kmer_folder"].as<std::string>();
     if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && path_kmer_folder.size() > 0) {
         filename_kmerTable = path_kmer_folder + "/kmertable_" + data + ".bin";
@@ -50,6 +48,12 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     foldername_BFV = result["bfv_folder"].as<std::string>();
     foldername_ctxtread = result["ctxt_read_folder"].as<std::string>();
     foldername_ctxtout = result["ctxt_out_folder"].as<std::string>();
+    if (foldername_ctxtread.size() == 0) {
+        foldername_ctxtread = foldername_BFV + "/ctxtread";
+    }
+    if (foldername_ctxtout.size() == 0) {
+        foldername_ctxtout = foldername_BFV + "/ctxtout";
+    }
 }
 
 void PQuantParams::print() {
@@ -60,6 +64,8 @@ void PQuantParams::print() {
     std::cout << "filename_kmerTable = " << this->filename_kmerTable << std::endl;
     std::cout << "filename_kmerList = " << this->filename_kmerList << std::endl;
     std::cout << "foldername_BFV = " << this->foldername_BFV << std::endl;
+    std::cout << "foldername_ctxtread = " << this->foldername_ctxtread << std::endl;
+    std::cout << "foldername_ctxtout = " << this->foldername_ctxtout << std::endl;
     
     std::cout << std::endl;
     std::cout << " == default parameters ==" << std::endl;
@@ -74,6 +80,6 @@ void PQuantParams::print() {
     std::cout << std::endl;
     std::cout << " == flags ==" << std::endl;
     std::cout << "verbose = " << this->verbose << std::endl;
-    std::cout << "divide_encode_mult (memory) = " << this->memory << std::endl;
+    std::cout << "json_format = " << this->json_format << std::endl;
     std::cout << "print_progress_bar = " << this->progress_bar << std::endl;
 }

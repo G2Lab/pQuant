@@ -25,6 +25,7 @@ int main(int argc, char **argv) {
         ("g,gene", "gene path", cxxopts::value<std::string>()->default_value(""))
         ("r,read", "read path", cxxopts::value<std::string>()->default_value(""))
         ("e,thres", "entropy threshold", cxxopts::value<float>()->default_value("0.00001"))
+        ("j,json", "use json format for kmer table", cxxopts::value<bool>()->default_value("false"))
         ("kmer_folder", "save/load kmerTable and kmerList from folder path; filename is automatically set by k/data/thres", cxxopts::value<std::string>()->default_value(""))
         ("kmer_table", "save/load kmerTable from file path", cxxopts::value<std::string>()->default_value(""))
         ("kmer_list", "save/load kmerList from file path", cxxopts::value<std::string>()->default_value(""))
@@ -34,7 +35,6 @@ int main(int argc, char **argv) {
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
-        ("memory,divide_encode_mult", "divide encoding and multiplication steps", cxxopts::value<bool>()->default_value("false"))
         ("h,help", "Print usage")
     ;
 
@@ -71,6 +71,12 @@ int main(int argc, char **argv) {
         Task::bfvBenchmark(param);
     } else if (param.target.compare("all") == 0) {
         Task::run_all(param);
+    } else if (param.target.compare("main") == 0) {
+        MainAlgorithmSet::generateKmerTableFromReference(param);
+        MainAlgorithmSet::keyGenBFVandSerialize(param);
+        MainAlgorithmSet::encodeAndEncrypt(param);
+        MainAlgorithmSet::computeInnerProductBatch(param);
+        MainAlgorithmSet::decryptAndReturnGeneVector(param);
     } else {
         std::cout << "Invalid target algorithm" << std::endl;
         exit(0);

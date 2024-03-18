@@ -145,12 +145,14 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             count_total.insert(make_pair(i, gene_kmer_count));
             gene_kmer_count.clear();
 
-            print_progress_bar("countKmersPerGene", i, end - start, start_time);
+            if (param.progress_bar) {
+                print_progress_bar("countKmersPerGene", i, end - start, start_time);
+            }
         }
 
         std::map<size_t, float> entropy_total;
         // compute entropy
-        int i = 0;
+        int progress_count = 0;
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             size_t kmer = it->first;
             float entropy_ = 0;
@@ -165,40 +167,40 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             }
             entropy_total.insert(make_pair(kmer, entropy_));
             if (param.progress_bar) {
-                print_progress_bar("computeEntropy", i, kmer_occurance.size(), start_time);
-                i += 1;
+                print_progress_bar("computeEntropy", progress_count, kmer_occurance.size(), start_time);
+                progress_count += 1;
             }
         }
 
         // filter entropy
-        i = 0;
+        progress_count = 0;
         for (auto it = entropy_total.begin(); it != entropy_total.end(); ++it) {
             if (it->second < thres) {
                 entropy.insert(make_pair(it->first, it->second));
             }
             if (param.progress_bar) {
-                print_progress_bar("filterEntropy", i, entropy_total.size(), start_time);
-                i += 1;
+                print_progress_bar("filterEntropy", progress_count, entropy_total.size(), start_time);
+                progress_count += 1;
             }
         }
         entropy_total.clear();
 
         // filter kmer_occurance
-        i = 0;
+        progress_count = 0;
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             if (entropy.find(it->first) != entropy.end()) {
                 tableRef.insert(make_pair(it->first, it->second));
             }
             if (param.progress_bar) {
-                print_progress_bar("filterKmerOccurance", i, kmer_occurance.size(), start_time);
-                i += 1;
+                print_progress_bar("filterKmerOccurance", progress_count, kmer_occurance.size(), start_time);
+                progress_count += 1;
             }
         }
         n_kmer_total = entropy.size();
         kmer_occurance.clear();
 
         // filter count_total
-        i = 0;
+        progress_count = 0;
         for (auto it = count_total.begin(); it != count_total.end(); ++it) {
             map<size_t, size_t> gene_kmer_count = it->second;
             map<size_t, size_t> gene_kmer_count_filtered;
@@ -209,15 +211,17 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
             }
             count.insert(make_pair(it->first, gene_kmer_count_filtered));
             if (param.progress_bar) {
-                print_progress_bar("filterCountTotal", i, count_total.size(), start_time);
-                i += 1;
+                print_progress_bar("filterCountTotal", progress_count, count_total.size(), start_time);
+                progress_count += 1;
             }
         }
         count_total.clear();
     } else {
+        auto start_time = std::chrono::high_resolution_clock::now();
         // case 2: from read
         // count kmers in gene
         for (size_t i = 0; i < gene.size(); i++) {
+            cout << "numseq = " << gene[i].getNumSeq() << endl;
             for (int j = 0; j < gene[i].getNumSeq(); j++) {
                 string seq = gene[i].getSeq(j);
                 if (seq.size() < static_cast<size_t>(K)) {
@@ -230,6 +234,9 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
                         continue;
                     }
                     countRead[num] += 1;
+                }
+                if (param.progress_bar) {
+                    print_progress_bar("Encode strings", j, gene[i].getNumSeq(), start_time);
                 }
             }
         }

@@ -62,8 +62,20 @@ void Task::testKmerTable(PQuantParams &param) {
 
     vector<Sequence> refs_seq;
     vector<Sequence> reads_seq;
+    std::cout << "read reference sequences" << endl;
     readFastaFile(filename_ref, refs_seq);
-    readFastaFile(filename_read, reads_seq);
+    std::cout << "read read sequences" << endl;
+    if (param.filename_read.find(".fa") != std::string::npos && param.filename_read.find(".fastq") == std::string::npos) {
+        std::cout << "confirmed filename ends with .fa" << endl;
+        readFastaFile(param.filename_read, reads_seq);
+    } else if (param.filename_read.find(".fq") != std::string::npos || param.filename_read.find(".fastq") != std::string::npos) {
+        std::cout << "confirmed filename ends with .fq or .fastq" << endl;
+        readFastQFile(param.filename_read, reads_seq);
+    } else {
+        std::cout << "Invalid file format" << std::endl;
+        std::cout << "Assume it is .fa format" << std::endl;
+        readFastaFile(param.filename_read, reads_seq);
+    }
 
     KmerTable kmerTableRef(refs_seq, param, true);
     KmerTable kmerTableRead(reads_seq, param, false);
@@ -77,13 +89,13 @@ void Task::testKmerTable(PQuantParams &param) {
     cout << "entropy.size() = " << kmerTableRead.entropy.size() << endl;
 
     cout << "=== kmerTableRef ===" << endl;
-    // printKmerTable(kmerTableRef, true);
-    if (param.verbose)
-        kmerTableRef.print();
+    // if (param.verbose)
+    //     kmerTableRef.print();
 
     cout << "=== kmerTableRead ===" << endl;
-    // printKmerTable(kmerTableRead, false);
-    // kmerTableRead.print();
+    if (param.verbose)
+        kmerTableRead.print();
+    return;
 
     cout << "== save kmerTableRef to txt ==" << endl;
     kmerTableRef.save("kmerTableRef.txt");
