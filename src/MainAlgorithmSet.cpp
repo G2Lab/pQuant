@@ -20,20 +20,11 @@ void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
     auto duration_kmerTable = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerTable - start_time_kmerTable).count();
     std::cout << "computeKmerTable duration = " << duration_kmerTable << " ms" << std::endl;
     std::cout << std::endl;
-    if (param.verbose) {
-        kmerTable.print();
-    }
     // save kmerTable & kmerList to file
     cout << "=== save kmerTable & kmerList to file ===" << endl;
     auto start_time_save = std::chrono::high_resolution_clock::now();
-    if (param.json_format) {
-        kmerTable.save(param.filename_kmerTable);
-        kmerTable.saveKmerList(param.filename_kmerList);
-    } else {
-        kmerTable.saveBinary(param.filename_kmerTable);
-        kmerTable.saveKmerListBinary(param.filename_kmerList);
-    }
-    
+    kmerTable.saveBinary(param.filename_kmerTable);
+    kmerTable.saveKmerListBinary(param.filename_kmerList);
     auto end_time_save = std::chrono::high_resolution_clock::now();
     auto duration_save = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_save - start_time_save).count();
     std::cout << "save duration = " << duration_save << " ms" << std::endl;
@@ -187,21 +178,12 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     std::cout << "=== load kmerList ===" << std::endl;
     auto start_time_kmerList = std::chrono::high_resolution_clock::now();
     vector<size_t> kmer_list;
-    if (param.json_format) {
-        loadKmerList(param.filename_kmerList, kmer_list);
-    } else {
-        loadKmerListBinary(param.filename_kmerList, kmer_list);
-    }
+    loadKmerListBinary(param.filename_kmerList, kmer_list);
     auto end_time_kmerList = std::chrono::high_resolution_clock::now();
     auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
     std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
     std::cout << std::endl;
-    if (param.verbose) {
-        for (size_t i = 0; i < kmer_list.size(); i++) {
-            std::cout << kmer_list[i] << " ";
-        }
-        cout << "kmer_list.size() = " << kmer_list.size() << endl;
-    }
+
     size_t n_kmer_total = kmer_list.size();
     size_t n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
     size_t n_plain_vecs = (n_kmer_total - 1) / n_slots + 1;
@@ -256,7 +238,7 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     // serialize ct
     std::cout << "=== serialize ct ===" << std::endl;
     auto start_time_serialize = std::chrono::high_resolution_clock::now();
-    std::string filename_ctxtRead = param.foldername_BFV + "/ctxt_read";
+    std::string filename_ctxtRead = param.foldername_ctxtread;
     // create folder if doesn't exist
     if (!std::filesystem::exists(filename_ctxtRead)) {
         std::filesystem::create_directory(filename_ctxtRead);
@@ -302,7 +284,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         std::cerr << "I cannot read serialization from " << filename_context << std::endl;
         return;
     }
-    std::cout << "The cryptocontext has been deserialized from " << filename_context << std::endl;
+    std::cout << "The cryptocontext has been deserialized." << std::endl;
 
     // Deserialize the eval mult keys
     std::ifstream emkeyfile(filename_eval_mult, std::ios::in | std::ios::binary);
@@ -311,7 +293,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         return;
     }
     cc->DeserializeEvalMultKey(emkeyfile, SerType::BINARY);
-    std::cout << "The eval mult keys have been deserialized from " << filename_eval_mult << std::endl;
+    std::cout << "The eval mult keys have been deserialized." << std::endl;
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     std::cout << "Deserialize duration = " << duration << " ms" << std::endl;
@@ -322,11 +304,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
     KmerTable kmerTableRef;
     vector<size_t> kmer_list;
-    if (param.json_format) {
-        kmerTableRef.load(param.filename_kmerTable);
-    } else {
-        kmerTableRef.loadBinary(param.filename_kmerTable);
-    }
+    kmerTableRef.loadBinary(param.filename_kmerTable);
     if (param.verbose) {
         kmerTableRef.print();
     }
@@ -341,16 +319,12 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         start = param.gene_start;
         end = param.gene_end + 1;
     }
-    cout << "Run genes from " << start << " to " << end - 1 << endl;
+    cout << "start = " << start << " : end = " << end << endl;
 
     // read kmerList
     std::cout << "=== load kmerList ===" << std::endl;
     auto start_time_kmerList = std::chrono::high_resolution_clock::now();
-    if (param.json_format) {
-        loadKmerList(param.filename_kmerList, kmer_list);
-    } else {
-        loadKmerListBinary(param.filename_kmerList, kmer_list);
-    }
+    loadKmerListBinary(param.filename_kmerList, kmer_list);
     auto end_time_kmerList = std::chrono::high_resolution_clock::now();
     auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
     std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
@@ -374,11 +348,13 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     vector<int64_t> dummy_vec(n_slots, 0);
     Plaintext dummy = cc->MakeCoefPackedPlaintext(dummy_vec);
 
-    // read ctxtRead
+    // read filename_ctxtRead
+    std::string filename_ctxtRead = param.foldername_ctxtread;
     std::cout << "=== read ctxtRead ===" << std::endl;
     auto start_time_ctxtRead = std::chrono::high_resolution_clock::now();
+    cout << "  ======== readreadread ======" << endl;
     for (size_t r = 0; r < n_vec_per_gene; r++) {
-        if (!Serial::DeserializeFromFile(param.foldername_BFV + "/ctxt_read/ct_" + std::to_string(r) + ".txt", ct[r], SerType::BINARY)) {
+        if (!Serial::DeserializeFromFile(filename_ctxtRead + "/ct_" + std::to_string(r) + ".txt", ct[r], SerType::BINARY)) {
             std::cerr << "Error reading serialization of the ctxtRead" << std::endl;
             return;
         }
@@ -391,7 +367,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     std::cout << std::endl;
     
     // encode kmerTable
-    std::cout << "=== encode kmerTable and mult ===" << std::endl;
+    std::cout << "=== encode kmerTable ===" << std::endl;
     auto start_time_encode_and_mult = std::chrono::high_resolution_clock::now();
     // Plaintext_2d pt_ref(end - start, Plaintext_1d(n_vec_per_gene));
     int progress = 0;
@@ -422,7 +398,6 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         for (size_t i = 0; i < n_vec_per_gene; i++) {
             pt_ref[i] = cc->MakeCoefPackedPlaintext(plain_vec[i]);
         }
-        cout << "coefpacked done" << endl;
         for (size_t i = 0; i < ct.size(); i++) {
             if (i == 0) {
                 ct_out[g - start] = cc->EvalMult(ct[0], pt_ref[i]);
@@ -443,7 +418,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     // serialize ct_out
     std::cout << "=== serialize ct_out ===" << std::endl;
     auto start_time_serialize = std::chrono::high_resolution_clock::now();
-    std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
+    std::string filename_ctxtOut = param.foldername_ctxtout;
     // create folder if doesn't exist
     if (!std::filesystem::exists(filename_ctxtOut)) {
         std::filesystem::create_directory(filename_ctxtOut);
@@ -505,11 +480,7 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
     std::cout << "=== read kmerTable ===" << std::endl;
     auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
     KmerTable kmerTableRef;
-    if (param.json_format) {
-        kmerTableRef.load(param.filename_kmerTable);
-    } else {
-        kmerTableRef.loadBinary(param.filename_kmerTable);
-    }
+    kmerTableRef.loadBinary(param.filename_kmerTable);
     if (param.verbose) {
         kmerTableRef.print();
     }
@@ -527,7 +498,9 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
     std::cout << "=== read ctxt_out ===" << std::endl;
     auto start_time_ctxtOut = std::chrono::high_resolution_clock::now();
     Ciphertext_1d ct_out;
-    std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
+    //std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
+    std::string filename_ctxtOut = param.foldername_ctxtout;
+
     for (size_t i = param.gene_start; i < static_cast<size_t>(param.gene_end); i++) {
         std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
         Ciphertext<DCRTPoly> ctxt;

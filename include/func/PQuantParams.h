@@ -25,11 +25,12 @@ class PQuantParams {
     std::string filename_kmerTable;
     std::string filename_kmerList;
     std::string foldername_BFV;
+    std::string foldername_ctxtread;
+    std::string foldername_ctxtout;
     std::string target;
 
     //debug
     bool verbose;
-    bool json_format;
     int debug_n_gene;
     int gene_start;
     int gene_end;
