@@ -89,6 +89,7 @@
         "utility": "cpp",
         "valarray": "cpp",
         "condition_variable": "cpp",
-        "filesystem": "cpp"
+        "filesystem": "cpp",
+        "future": "cpp"
     }
 }

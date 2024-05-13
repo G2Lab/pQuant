@@ -78,10 +78,34 @@ int main(int argc, char **argv) {
     } else if (param.target.compare("all") == 0) {
         Task::run_all(param);
     } else if (param.target.compare("main") == 0) {
+        cout << " ========================================== " << endl;
+        cout << " ================= STEP 1 ================= " << endl;
+        cout << " ========================================== " << endl;
+        cout << endl;
         MainAlgorithmSet::generateKmerTableFromReference(param);
+        cout << endl;
+        cout << " ========================================== " << endl;
+        cout << " ================= STEP 2 ================= " << endl;
+        cout << " ========================================== " << endl;
+        cout << endl;
         MainAlgorithmSet::keyGenBFVandSerialize(param);
+        cout << endl;
+        cout << " ========================================== " << endl;
+        cout << " ================= STEP 3 ================= " << endl;
+        cout << " ========================================== " << endl;
+        cout << endl;
         MainAlgorithmSet::encodeAndEncrypt(param);
+        cout << endl;
+        cout << " ========================================== " << endl;
+        cout << " ================= STEP 4 ================= " << endl;
+        cout << " ========================================== " << endl;
+        cout << endl;
         MainAlgorithmSet::computeInnerProductBatch(param);
+        cout << endl;
+        cout << " ========================================== " << endl;
+        cout << " ================= STEP 5 ================= " << endl;
+        cout << " ========================================== " << endl;
+        cout << endl;
         MainAlgorithmSet::decryptAndReturnGeneVector(param);
     } else {
         std::cout << "Invalid target algorithm" << std::endl;

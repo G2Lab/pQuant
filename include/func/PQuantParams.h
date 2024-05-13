@@ -36,7 +36,7 @@ class PQuantParams {
     int gene_start;
     int gene_end;
     bool progress_bar;
-    bool memory;
+    bool operate_then_serialize;
 
     PQuantParams(cxxopts::ParseResult &result);
 

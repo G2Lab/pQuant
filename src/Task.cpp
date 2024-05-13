@@ -431,7 +431,7 @@ void Task::run_all(PQuantParams &param) {
 
     size_t duration_mult, duration_encode, duration_encode_and_mult;
     Ciphertext_1d ct_out;
-    if (param.memory) {
+    if (param.operate_then_serialize) {
         start_time = std::chrono::high_resolution_clock::now();
         cout << endl;
         cout << " === run encodeRefKmer === " << endl;
@@ -499,7 +499,7 @@ void Task::run_all(PQuantParams &param) {
     cout << "== duration summary ==" << endl;
     cout << "computeKmerTable duration = " << duration_ref << " ms" << endl;
     cout << "encryptReadKmer duration = " << duration_encread << " ms" << endl;
-    if (param.memory) {
+    if (param.operate_then_serialize) {
         cout << "encodeRefKmer duration   = " << duration_encode << " ms" << endl;
         cout << "multCtxtByRef duration   = " << duration_mult << " ms" << endl;
     } else {
