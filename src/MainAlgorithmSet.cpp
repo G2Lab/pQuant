@@ -50,7 +50,7 @@ void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
 
 void MainAlgorithmSet::keyGenBFVandSerialize(PQuantParams &param) {
     CCParams<CryptoContextBFVRNS> parameters;
-    parameters.SetPlaintextModulus(65537);
+    parameters.SetPlaintextModulus(536903681);
     parameters.SetMultiplicativeDepth(1);
     parameters.SetMaxRelinSkDeg(2);
 

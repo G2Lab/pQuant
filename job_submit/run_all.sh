@@ -19,7 +19,7 @@ N_GENES=5000
 N_BATCH=250
 MEM="200G"
 GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
-READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_fastqs/5k_random_protein_coding_genes.genes_only.fq"
+READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_paired_fastqs/5k_random_protein_coding_genes.combined_exons.genes_only.concatenated.fq"
 DATA=""
 OUT_DIR="../out/021624"
 

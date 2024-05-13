@@ -44,3 +44,5 @@ crypto/*
 *.csv
 *.png
 *.pyc
+*.tsv
+summary/*

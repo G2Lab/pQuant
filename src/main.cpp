@@ -35,6 +35,7 @@ int main(int argc, char **argv) {
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
+        ("ets,operate_then_serialize", "finish encrypt/decrypt and then serialize outputs", cxxopts::value<bool>()->default_value("false"))
         ("h,help", "Print usage")
     ;
 
@@ -49,9 +50,16 @@ int main(int argc, char **argv) {
 
     PQuantParams param(result);
 
+    // test algorithms
+    if (param.target.compare("bench") == 0) {
+        Task::bfvBenchmark(param);
+        return 0;
+    }
+    
+    
+    // main algorithms
     param.print();
 
-    // main algorithms
     if (param.target.compare("STEP1") == 0) {
         MainAlgorithmSet::generateKmerTableFromReference(param);
     } else if (param.target.compare("STEP2") == 0) {
@@ -67,8 +75,6 @@ int main(int argc, char **argv) {
         Task::readFastaFiles(param);
     } else if (param.target.compare("table") == 0) {
         Task::testKmerTable(param);
-    } else if (param.target.compare("bench") == 0) {
-        Task::bfvBenchmark(param);
     } else if (param.target.compare("all") == 0) {
         Task::run_all(param);
     } else if (param.target.compare("main") == 0) {

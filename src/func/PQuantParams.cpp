@@ -1,6 +1,11 @@
 #include "func/PQuantParams.h"
 
 PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
+    // exception for test functions
+    if (result["target"].as<std::string>() == "bench") {
+        this->target = "bench";
+        return;
+    }
     if (result["gene"].as<std::string>().size() == 0 && result["read"].as<std::string>().size() == 0 && result["data"].as<std::string>().size() == 0) {
         std::cerr << "Please specify dataset or gene and read path" << std::endl;
         exit(0);
@@ -39,6 +44,7 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->gene_start = result["gene_start"].as<int>();
     this->gene_end = result["gene_end"].as<int>();
     this->json_format = result["json"].as<bool>();
+    this->operate_then_serialize = result["operate_then_serialize"].as<bool>();
 
     std::string path_kmer_folder = result["kmer_folder"].as<std::string>();
     if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && path_kmer_folder.size() > 0) {
@@ -82,4 +88,5 @@ void PQuantParams::print() {
     std::cout << "verbose = " << this->verbose << std::endl;
     std::cout << "json_format = " << this->json_format << std::endl;
     std::cout << "print_progress_bar = " << this->progress_bar << std::endl;
+    std::cout << "operate_then_serialize = " << this->operate_then_serialize << std::endl;
 }

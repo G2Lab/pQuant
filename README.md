@@ -1,14 +1,14 @@
 # PQuant_HE - BFV implementation of secure pQuant algorithm
 
-## How to run
+## Installation
 
-Please follow the steps below in order.
-Load required modules first
-```bash
-    module load cmake/3.16.3
-    module load gcc/9.2.0
-    module load clang
-```
+### Dependencies
+
+Install following modules, ensuring you use the specified (or later) versions which have been tested and verified for compatibility:
+- cmake (3.16.3)
+- gcc (9.2.0)
+- llvm (9.0.0)
+- clang (9.0.0)
 
 ### Install OpenFHE
 
@@ -39,7 +39,8 @@ As a result, executable file is made as name `pquant`. To test, try run
 ```
 Then the code tests BFV schemes from openFHE library, and outputs runtimes for encode/encrypt/decrypt/add/mult.
 
-### Run
+## Code Examples
+
 Use `*.sh` files in `job_submit/` folder. To run all jobs, run as follows
 ```bash
     # cd ~
