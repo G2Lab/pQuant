@@ -46,10 +46,10 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->json_format = result["json"].as<bool>();
     this->operate_then_serialize = result["operate_then_serialize"].as<bool>();
 
-    std::string path_kmer_folder = result["kmer_folder"].as<std::string>();
-    if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && path_kmer_folder.size() > 0) {
-        filename_kmerTable = path_kmer_folder + "/kmertable_" + data + ".bin";
-        filename_kmerList =  path_kmer_folder + "/kmerlist_" + data + ".bin";
+    this->foldername_kmer = result["kmer_folder"].as<std::string>();
+    if (filename_kmerTable.size() == 0 && filename_kmerList.size() == 0 && foldername_kmer.size() > 0) {
+        filename_kmerTable = foldername_kmer + "/kmertable_" + data + ".bin";
+        filename_kmerList =  foldername_kmer + "/kmerlist_" + data + ".bin";
     }
     foldername_BFV = result["bfv_folder"].as<std::string>();
     foldername_ctxtread = result["ctxt_read_folder"].as<std::string>();

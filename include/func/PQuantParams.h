@@ -22,6 +22,7 @@ class PQuantParams {
     std::string data;
     std::string filename_read;
     std::string filename_ref;
+    std::string foldername_kmer;
     std::string filename_kmerTable;
     std::string filename_kmerList;
     std::string foldername_BFV;

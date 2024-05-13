@@ -221,7 +221,6 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
         // case 2: from read
         // count kmers in gene
         for (size_t i = 0; i < gene.size(); i++) {
-            cout << "numseq = " << gene[i].getNumSeq() << endl;
             for (int j = 0; j < gene[i].getNumSeq(); j++) {
                 string seq = gene[i].getSeq(j);
                 if (seq.size() < static_cast<size_t>(K)) {

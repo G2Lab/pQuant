@@ -25,6 +25,14 @@ void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
     }
     // save kmerTable & kmerList to file
     cout << "=== save kmerTable & kmerList to file ===" << endl;
+    std::filesystem::path dir_path = param.foldername_kmer;
+    if (!std::filesystem::exists(dir_path)) {
+        if(std::filesystem::create_directories(dir_path)) {
+            std::cout << "Directory created: " << dir_path << std::endl;
+        } else {
+            std::cerr << "Failed to create directory: " << dir_path << std::endl;
+        }
+    }
     auto start_time_save = std::chrono::high_resolution_clock::now();
     if (param.json_format) {
         kmerTable.save(param.filename_kmerTable);
@@ -84,6 +92,16 @@ void MainAlgorithmSet::keyGenBFVandSerialize(PQuantParams &param) {
     auto duration_keygen = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_keygen - start_time_keygen).count();
     std::cout << "KeyGen duration = " << duration_keygen << " ms" << std::endl;
     std::cout << std::endl;
+
+    // create fildername_BFV
+    std::filesystem::path dir_path = param.foldername_BFV;
+    if (!std::filesystem::exists(dir_path)) {
+        if(std::filesystem::create_directories(dir_path)) {
+            std::cout << "Directory created: " << dir_path << std::endl;
+        } else {
+            std::cerr << "Failed to create directory: " << dir_path << std::endl;
+        }
+    }
 
     std::string filename_context = param.foldername_BFV + "/context.txt";
     std::string filename_public = param.foldername_BFV + "/key-public.txt";
@@ -158,11 +176,11 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     std::cout << "The cryptocontext has been deserialized from " << filename_context << std::endl;
 
     PrivateKey<DCRTPoly> sk;
-    if (Serial::DeserializeFromFile(filename_private, sk, SerType::BINARY) == false) {
+    if (!Serial::DeserializeFromFile(filename_private, sk, SerType::BINARY)) {
         std::cerr << "Could not read secret key" << std::endl;
         return;
     }
-    std::cout << "The secret key has been deserialized." << std::endl;
+    std::cout << "The secret key has been deserialized from " << filename_private << std::endl;
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     std::cout << "Deserialize duration = " << duration << " ms" << std::endl;
@@ -252,9 +270,16 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     std::cout << "=== encrypt plain_vec ===" << std::endl;
     
     std::string filename_ctxtRead = param.foldername_ctxtread;
-    std::chrono::duration<double, std::ratio<1, 1000> > duration_encrypt, duration_serialize;
-    std::chrono::duration<double, std::ratio<1, 1000> > duration_encrypt_then_serialize;
+    // create folder if doesn't exist
+    if (!std::filesystem::exists(filename_ctxtRead)) {
+        std::filesystem::create_directory(filename_ctxtRead);
+    }
 
+    size_t duration_encrypt, duration_serialize;
+    size_t duration_encrypt_then_serialize;
+    
+    cout << "before enc, check memory" << endl;
+    printMemoryUsage();
     if (param.operate_then_serialize) {
         auto start_time_encrypt = std::chrono::high_resolution_clock::now();
         Ciphertext_1d ct;
@@ -295,13 +320,16 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
         std::cout << std::endl;
     } else {
         auto start_time_encrypt_and_serialize = std::chrono::high_resolution_clock::now();
+        Plaintext plain;
+        Ciphertext<DCRTPoly> ciphertext;
+        std::string filename_ctxtRead_i;
         for (size_t i = 0; i < n_plain_vecs; i++) {
             // encode & encrypt
-            Plaintext plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
-            Ciphertext<DCRTPoly> ciphertext = cc->Encrypt(sk, plain);
+            plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            ciphertext = cc->Encrypt(sk, plain);
 
             // serialize ctxt
-            std::string filename_ctxtRead_i = filename_ctxtRead + "/ct_" + std::to_string(i) + ".txt";
+            filename_ctxtRead_i = filename_ctxtRead + "/ct_" + std::to_string(i) + ".txt";
             if (!Serial::SerializeToFile(filename_ctxtRead_i, ciphertext, SerType::BINARY)) {
                 std::cerr << "Error writing serialization of the ctxtRead to " << filename_ctxtRead_i << std::endl;
                 return;
@@ -312,8 +340,8 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
                 print_progress_bar("EncryptAndSerializeReadKmer", i, n_plain_vecs, start_time_encrypt_and_serialize);
         }
         auto end_time_encrypt_and_serialize = std::chrono::high_resolution_clock::now();
-        duration_encrypt_and_serialize = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encrypt_and_serialize - start_time_encrypt_and_serialize).count();
-        std::cout << "EncryptAndSerializeReadKmer duration = " << duration_encrypt_and_serialize << " ms" << std::endl;
+        duration_encrypt_then_serialize = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encrypt_and_serialize - start_time_encrypt_and_serialize).count();
+        std::cout << "EncryptAndSerializeReadKmer duration = " << duration_encrypt_then_serialize << " ms" << std::endl;
         std::cout << std::endl;
     }
     
@@ -351,7 +379,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         std::cerr << "I cannot read serialization from " << filename_context << std::endl;
         return;
     }
-    std::cout << "The cryptocontext has been deserialized." << std::endl;
+    std::cout << "The cryptocontext has been deserialized from " << filename_context << std::endl;
 
     // Deserialize the eval mult keys
     std::ifstream emkeyfile(filename_eval_mult, std::ios::in | std::ios::binary);
@@ -360,7 +388,7 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
         return;
     }
     cc->DeserializeEvalMultKey(emkeyfile, SerType::BINARY);
-    std::cout << "The eval mult keys have been deserialized." << std::endl;
+    std::cout << "The eval mult keys have been deserialized from " << filename_eval_mult << std::endl;
     auto end_time = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
     std::cout << "Deserialize duration = " << duration << " ms" << std::endl;
@@ -443,7 +471,6 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     // encode kmerTable
     std::cout << "=== encode kmerTable and mult ===" << std::endl;
     auto start_time_encode_and_mult = std::chrono::high_resolution_clock::now();
-    int progress = 0;
     Ciphertext_1d ct_out(n_genes);
     for (size_t g = start; g < end; g++) {
         vector<vector<int64_t>> plain_vec(n_vec_per_gene, vector<int64_t>(n_slots, 0));
@@ -462,16 +489,13 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
             } else {
                 plain_vec[num_vec][n_slots - num_slot] -= kmerEntry.second;
             }
-            progress += 1;
-        }
-        for (size_t i = 0; i < n_vec_per_gene; i++) {
-            pt_ref[i] = cc->MakeCoefPackedPlaintext(plain_vec[i]);
         }
         for (size_t i = 0; i < ct.size(); i++) {
+            Plaintext pt_ref = cc->MakeCoefPackedPlaintext(plain_vec[i]);
             if (i == 0) {
-                ct_out[g - start] = cc->EvalMult(ct[0], pt_ref[i]);
+                ct_out[g - start] = cc->EvalMult(ct[0], pt_ref);
             } else {
-                Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], pt_ref[i]);
+                Ciphertext<DCRTPoly> ctxt = cc->EvalMult(ct[i], pt_ref);
                 cc->EvalAddInPlace(ct_out[g - start], ctxt);
             }
             // update progress bar
@@ -569,55 +593,99 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
         param.gene_start = 0;
         param.gene_end = n_genes;
     }
+    
+    size_t duration_out, duration_dec;
+    size_t duration_out_then_dec;
+    vector<long> final(n_genes, 0);
+    if (param.operate_then_serialize) {
+        // read ctxt_out
+        std::cout << "=== read ctxt_out ===" << std::endl;
+        auto start_time_ctxtOut = std::chrono::high_resolution_clock::now();
+        Ciphertext_1d ct_out;
+        //std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
+        std::string filename_ctxtOut = param.foldername_ctxtout;
 
-    // read ctxt_out
-    std::cout << "=== read ctxt_out ===" << std::endl;
-    auto start_time_ctxtOut = std::chrono::high_resolution_clock::now();
-    Ciphertext_1d ct_out;
-    //std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
-    std::string filename_ctxtOut = param.foldername_ctxtout;
-
-    for (size_t i = param.gene_start; i < static_cast<size_t>(param.gene_end); i++) {
-        std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
-        Ciphertext<DCRTPoly> ctxt;
-        if (!Serial::DeserializeFromFile(filename_ctxtOut_i, ctxt, SerType::BINARY)) {
-            std::cerr << "Error reading serialization of the ctxt_out from " << filename_ctxtOut_i << std::endl;
-            return;
+        for (size_t i = param.gene_start; i < static_cast<size_t>(param.gene_end); i++) {
+            std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
+            Ciphertext<DCRTPoly> ctxt;
+            if (!Serial::DeserializeFromFile(filename_ctxtOut_i, ctxt, SerType::BINARY)) {
+                std::cerr << "Error reading serialization of the ctxt_out from " << filename_ctxtOut_i << std::endl;
+                return;
+            }
+            ct_out.push_back(ctxt);
+            if (param.progress_bar)
+                print_progress_bar("read ctxtOut", i, n_genes, start_time_ctxtOut);
         }
-        ct_out.push_back(ctxt);
-        if (param.progress_bar)
-            print_progress_bar("read ctxtOut", i, n_genes, start_time_ctxtOut);
-    }
-    cout << "ctxt_out loaded: num = " << ct_out.size() << endl;
-    auto end_time_ctxtOut = std::chrono::high_resolution_clock::now();
-    auto duration_ctxtOut = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_ctxtOut - start_time_ctxtOut).count();
-    std::cout << "read ctxtOut duration = " << duration_ctxtOut << " ms" << std::endl;
-    std::cout << std::endl;
+        cout << "ctxt_out loaded: num = " << ct_out.size() << endl;
+        auto end_time_ctxtOut = std::chrono::high_resolution_clock::now();
+        duration_out = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_ctxtOut - start_time_ctxtOut).count();
+        std::cout << "read ctxtOut duration = " << duration_out << " ms" << std::endl;
+        std::cout << std::endl;
 
-    cout << " === run decrypt_output === " << endl;
-    auto start_time_dec = std::chrono::high_resolution_clock::now();
-    Plaintext_1d pt_sum(ct_out.size());
-    for (size_t i = 0; i < ct_out.size(); i++) {
-        cc->Decrypt(sk, ct_out[i], &pt_sum[i]);
-        if (param.progress_bar)
-            print_progress_bar("decryptOutput", i, ct_out.size(), start_time_dec);
+        cout << " === run decrypt_output === " << endl;
+        auto start_time_dec = std::chrono::high_resolution_clock::now();
+        Plaintext_1d pt_sum(ct_out.size());
+        for (size_t i = 0; i < ct_out.size(); i++) {
+            cc->Decrypt(sk, ct_out[i], &pt_sum[i]);
+            if (param.progress_bar)
+                print_progress_bar("decryptOutput", i, ct_out.size(), start_time_dec);
+        }
+        auto end_time_dec = std::chrono::high_resolution_clock::now();
+        duration_dec = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_dec - start_time_dec).count();
+        std::cout << "decryptOutput duration = " << duration_dec << " ms" << std::endl;
+        std::cout << std::endl;
+
+        for (size_t i = 0; i < pt_sum.size(); i++) {
+            auto plain = pt_sum[i]->GetCoefPackedValue();
+            final[i] = plain[0];
+        }
+    } else {
+        // read ctxt_out
+        std::cout << "=== read ctxt_out ===" << std::endl;
+        auto start_time_ctxt = std::chrono::high_resolution_clock::now();
+        //std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
+        std::string filename_ctxtOut = param.foldername_ctxtout;
+
+        Plaintext plain;
+        Ciphertext<DCRTPoly> ctxt;
+        for (size_t i = param.gene_start; i < static_cast<size_t>(param.gene_end); i++) {
+            std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
+            if (!Serial::DeserializeFromFile(filename_ctxtOut_i, ctxt, SerType::BINARY)) {
+                std::cerr << "Error reading serialization of the ctxt_out from " << filename_ctxtOut_i << std::endl;
+                return;
+            }
+            if (param.progress_bar)
+                print_progress_bar("read ctxtOut", i, n_genes, start_time_ctxt);
+
+            cc->Decrypt(sk, ctxt, &plain);
+            final[i] = plain->GetCoefPackedValue()[0];
+            if (param.progress_bar)
+                print_progress_bar("decryptOutput", i, param.gene_end - param.gene_start, start_time_ctxt);
+        }
+        auto end_time_dec = std::chrono::high_resolution_clock::now();
+        duration_out_then_dec = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_dec - start_time_ctxt).count();
+        std::cout << "serialAndDec duration = " << duration_out_then_dec << " ms" << std::endl;
+        std::cout << std::endl;
     }
-    auto end_time_dec = std::chrono::high_resolution_clock::now();
-    auto duration_dec = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_dec - start_time_dec).count();
-    std::cout << "decryptOutput duration = " << duration_dec << " ms" << std::endl;
-    std::cout << std::endl;
+    
 
     cout << " === print gene vector === " << endl;
-    for (size_t i = 0; i < pt_sum.size(); i++) {
-        auto plain = pt_sum[i]->GetCoefPackedValue();
-        cout << kmerTableRef.geneNameIndex[i] << " : " << plain[0] << endl;
+    for (size_t i = 0; i < final.size(); i++) {
+        cout << kmerTableRef.geneNameIndex[i] << " : " << final[i] << endl;
     }
     cout << endl;
     
+    auto total_duration = duration_kmerTable + duration_dec;
     std::cout << " === Duration summaries ===" << endl;
     std::cout << "load kmerTable duration = " << duration_kmerTable << " ms" << endl;
-    std::cout << "read ctxtOut duration = " << duration_ctxtOut << " ms" << endl;
-    std::cout << "decryptOutput duration = " << duration_dec << " ms" << endl;
-    std::cout << "total duration = " << duration_kmerTable + duration_ctxtOut + duration_dec << " ms" << std::endl;
+    if (param.operate_then_serialize) {
+        std::cout << "read ctxtOut duration = " << duration_out << " ms" << endl;
+        std::cout << "decryptOutput duration = " << duration_dec << " ms" << endl;
+        total_duration = total_duration + duration_out + duration_dec;
+    } else {
+        std::cout << "serialAndDec duration = " << duration_out_then_dec << " ms" << endl;
+        total_duration = total_duration + duration_out_then_dec;
+    }
+    std::cout << "total duration = " << total_duration << " ms" << std::endl;
     printMemoryUsage();
 }

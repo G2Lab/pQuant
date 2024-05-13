@@ -12,9 +12,8 @@ READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data
 # ### to run all dataset!
 for ((K=15; K<=35; K+=5))
 do
-    for thres in 0.0000001 0.00001 0.001 0.1 100
+    for thres in 0.0000001 0.00001 0.001 0.1 1 10 100
     do 
-        # filename="${output_directory}/pQuant_${K}_${thres}.out"
-        sbatch run_all.sh -k ${K} -g ${GENE_PATH} -r ${READ_PATH} -t ${thres} -n 5000 -b 250 -m "60G" -o "../out/030724"
+        sbatch run_all.sh -k ${K} -g ${GENE_PATH} -r ${READ_PATH} -t ${thres} -n 5000 -b 250 -m "60G" -o "../out/032324"
     done
 done

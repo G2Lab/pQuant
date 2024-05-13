@@ -463,7 +463,7 @@ void Task::run_all(PQuantParams &param) {
         cout << endl;
         end_time = std::chrono::high_resolution_clock::now();
         duration_encode_and_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-        cout << "multCtxtByRef duration = " << duration_mult << " ms" << endl;
+        cout << "multCtxtByRef duration = " << duration_encode_and_mult << " ms" << endl;
     }
     
     
