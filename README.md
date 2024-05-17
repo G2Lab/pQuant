@@ -1,18 +1,26 @@
-# PQuant_HE - BFV implementation of secure pQuant algorithm
+# PQuant_HE - secure pQuant algorithm
+
+# Overview
+
+PQuant_HE is a facilitating secure computation on encrypted genomic data. 
+This implementation leverages the OpenFHE library to ensure robust, secure operations without compromising on computational efficiency. 
+Below are the detailed instructions to help you set up and run the PQuant_HE environment.
 
 ## Installation
 
-### Dependencies
+### Prerequisites and Dependencies
 
-Install following modules, ensuring you use the specified (or later) versions which have been tested and verified for compatibility:
-- cmake (3.16.3)
-- gcc (9.2.0)
-- llvm (9.0.0)
-- clang (9.0.0)
+Ensure the installation of the following dependencies to guarantee compatibility with the PQuant_HE setup:
 
-### Install OpenFHE
+- cmake: version 3.16.3 or later
+- gcc: version 9.2.0 or later
+- llvm: version 9.0.0 or later
+- clang: version 9.0.0 or later
 
-OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. To install it on Linux, you can do as follows.
+### Installing OpenFHE
+
+OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. 
+Follow the steps below for a successful installation on Linux:
 ```bash
     git clone https://github.com/openfheorg/openfhe-development.git
     cd openfhe-development
@@ -24,46 +32,45 @@ OpenFHE is a public library that supports various homomorphic encryption schemes
     make install
 ```
 
-### Build
-
+### Building PQuant_HE
+To compile the PQuant_HE project:
 ```bash
     mkdir build
     cd build
     cmake ..
     make -j
 ```
-As a result, executable file is made as name `pquant`. To test, try run
+Upon successful compilation, the executable named pquant is generated. Test the installation using:
 ```bash
     # cd ~/build
     ./pquant -t bench
 ```
-Then the code tests BFV schemes from openFHE library, and outputs runtimes for encode/encrypt/decrypt/add/mult.
+This command will test the BFV schemes from the OpenFHE library and output runtime results for encode, encrypt, decrypt, add, and multiply operations.
 
-## Code Examples
+## Execution via Slurm
 
-Use `*.sh` files in `job_submit/` folder. To run all jobs, run as follows
+PQuant_HE is optimized for batch processing using Slurm. Scripts are located in the `job_submit/` folder.
+
+### Running All Jobs
+Navigate to the job submission directory and execute the jobs with:
 ```bash
-    # cd ~
-    cd job_submit
+    cd ~/job_submit
     sbatch run_all.sh -k <K> -g <GENE_PATH> -r <READ_PATH> -t <THRES> -n <N_GENES> -b <N_BATCH> -m <MEM> -o <OUT_DIR>
 ```
-`run_all.sh` runs every steps in order, batching 4th step. To change paramters, modify `run_all.sh` file from line 16. You can adjust following paramters:
-- K: k
+
+The parameters we use are as listed:
+- K: k, size of k-mer
 - THRES: H, threshold of entropy
 - N_GENES: number of genes in dataset
 - N_BATCH: number of batches you want to run. The code automatically divides genes into N_BATCH number of batches and run STEP 4 in parallel. Each job runs with {N_GENES / N_BATCH} genes
-- GENE_PATH: gene(reference) path
-- READ_PATH: read path
+- GENE_PATH: gene(reference) path (.fa)
+- READ_PATH: read path (.fa, .fq, or .fastq)
 - MEM: allocated memory for each batched jobs (e.g. "200G" for 200GB memory)
 - OUT_DIR: directory that all output files (include saved table, HE contents, etc) are saved
 
-For instance, you can run with
-```bash
-    # cd ~
-    cd job_submit
-    GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
-    READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_fastqs/5k_random_protein_coding_genes.genes_only.fq"
-    # note that above dataset consists of 5000 genes, so add that as an argument `-n`
-    # with `-b 250`, the code automatically divides 5000 genes into 250 batches and run with 20 genes per one job in Step 4.
-    sbatch run_all.sh -k 15 -t 0.00001 -g ${GENE_PATH} -r ${READ_PATH} -n 5000 -b 250 -m 200G -o ../out
-```
+### Results
+
+The results are stored in `<OUT_DIR>` folder. The slurm script creates a folder of name `<SLURM_JOB_ID>` and three other folders `bfv`, `kmer`, and `slurm_out`
+- `<OUT_DIR>/<SLURM_JOB_ID>/bfv`: all bfv-related stuffs are stored, including context, HE keys, and ciphertexts
+- `<OUT_DIR>/<SLURM_JOB_ID>/kmer`: all results from pQuant algorithm are stored. In our implementation, kmer table and the index of kmer are stored.
+- `<OUT_DIR>/<SLURM_JOB_ID>/slurm_out`: all logs are stored. 

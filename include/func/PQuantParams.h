@@ -36,6 +36,8 @@ class PQuantParams {
     int debug_n_gene;
     int gene_start;
     int gene_end;
+    int batch_num;
+    int batch_num_total;
     bool progress_bar;
     bool operate_then_serialize;
 

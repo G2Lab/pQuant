@@ -186,6 +186,20 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     std::cout << "Deserialize duration = " << duration << " ms" << std::endl;
     std::cout << std::endl;
 
+    // read kmerList
+    std::cout << "=== load kmerList ===" << std::endl;
+    auto start_time_kmerList = std::chrono::high_resolution_clock::now();
+    vector<size_t> kmer_list;
+    if (param.json_format) {
+        loadKmerList(param.filename_kmerList, kmer_list);
+    } else {
+        loadKmerListBinary(param.filename_kmerList, kmer_list);
+    }
+    auto end_time_kmerList = std::chrono::high_resolution_clock::now();
+    auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
+    std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
+    std::cout << std::endl;
+
     cout << "=== read reads and compute kmerTableRead ===" << endl;
     auto start_time_read = std::chrono::high_resolution_clock::now();
     vector<Sequence> reads_seq;
@@ -202,7 +216,8 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
         readFastQFile(param.filename_read, reads_seq);
     }
     // readFastQFile(param.filename_read, reads_seq);
-    KmerTable kmerTableRead(reads_seq, param, false);
+    // KmerTable kmerTableRead(reads_seq, param, false);
+    KmerTable kmerTableRead(reads_seq, param, kmer_list);
     reads_seq.clear();
     auto end_time_read = std::chrono::high_resolution_clock::now();
     auto duration_read = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_read - start_time_read).count();
@@ -210,20 +225,6 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
     if (param.verbose) {
         kmerTableRead.print();
     }
-    std::cout << std::endl;
-
-    // read kmerList
-    std::cout << "=== load kmerList ===" << std::endl;
-    auto start_time_kmerList = std::chrono::high_resolution_clock::now();
-    vector<size_t> kmer_list;
-    if (param.json_format) {
-        loadKmerList(param.filename_kmerList, kmer_list);
-    } else {
-        loadKmerListBinary(param.filename_kmerList, kmer_list);
-    }
-    auto end_time_kmerList = std::chrono::high_resolution_clock::now();
-    auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
-    std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
     std::cout << std::endl;
 
     if (param.verbose) {
@@ -275,8 +276,9 @@ void MainAlgorithmSet::encodeAndEncrypt(PQuantParams &param) {
         std::filesystem::create_directory(filename_ctxtRead);
     }
 
-    size_t duration_encrypt, duration_serialize;
-    size_t duration_encrypt_then_serialize;
+    size_t duration_encrypt = 0;
+    size_t duration_serialize = 0;
+    size_t duration_encrypt_then_serialize = 0;
     
     cout << "before enc, check memory" << endl;
     printMemoryUsage();
@@ -414,10 +416,20 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
 
     size_t start = 0;
     size_t end = kmerTableRef.n_gene;
-    if (param.gene_start >= 0 && param.gene_end >= 0) {
+    if (param.batch_num_total >= 0) {
+        long n_genes_per_batch = (kmerTableRef.n_gene - 1) / param.batch_num_total + 1;
+        if (param.batch_num >= 0) {
+            start = param.batch_num * n_genes_per_batch;
+            end = (param.batch_num + 1) * n_genes_per_batch;
+            end = end < kmerTableRef.n_gene ? end : kmerTableRef.n_gene;
+        } else {
+            start = 0;
+            end = kmerTableRef.n_gene;
+        }
+    } else if (param.gene_start >= 0 && param.gene_end >= 0) {
         start = param.gene_start;
-        end = param.gene_end + 1;
-    }
+        end = param.gene_end;
+    } 
     cout << "Run genes from " << start << " to " << end - 1 << endl;
 
     // read kmerList
@@ -570,32 +582,43 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
     std::cout << std::endl;
 
     // read kmerTable
-    std::cout << "=== read kmerTable ===" << std::endl;
-    auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
-    KmerTable kmerTableRef;
-        if (param.json_format) {
-        kmerTableRef.load(param.filename_kmerTable);
-    } else {
-        kmerTableRef.loadBinary(param.filename_kmerTable);
-    }
-    if (param.verbose) {
-        kmerTableRef.print();
-    }
-    auto end_time_kmerTable = std::chrono::high_resolution_clock::now();
-    auto duration_kmerTable = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerTable - start_time_kmerTable).count();
-    std::cout << "load kmerTable duration = " << duration_kmerTable << " ms" << std::endl;
-    std::cout << std::endl;
+    // std::cout << "=== read kmerTable ===" << std::endl;
+    // auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
+    // KmerTable kmerTableRef;
+    //     if (param.json_format) {
+    //     kmerTableRef.load(param.filename_kmerTable);
+    // } else {
+    //     kmerTableRef.loadBinary(param.filename_kmerTable);
+    // }
+    // if (param.verbose) {
+    //     kmerTableRef.print();
+    // }
+    // auto end_time_kmerTable = std::chrono::high_resolution_clock::now();
+    // auto duration_kmerTable = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerTable - start_time_kmerTable).count();
+    // std::cout << "load kmerTable duration = " << duration_kmerTable << " ms" << std::endl;
+    // std::cout << std::endl;
 
-    size_t n_genes = kmerTableRef.n_gene;
-    if (param.gene_start >= 0 && param.gene_end >= 0) {
-        n_genes = param.gene_end - param.gene_start;
-    } else {
-        param.gene_start = 0;
-        param.gene_end = n_genes;
+    // size_t n_genes = kmerTableRef.n_gene;
+    // param.gene_start = 0;
+    // param.gene_end = n_genes;
+
+    size_t n_genes = 0;
+
+    try {
+        for (const auto& entry : std::filesystem::directory_iterator(param.foldername_ctxtout)) {
+            if (entry.is_regular_file()) {
+                ++n_genes;
+            }
+        }
+    } catch (std::filesystem::filesystem_error& e) {
+        std::cerr << "Filesystem error: " << e.what() << std::endl;
+    } catch (std::exception& e) {
+        std::cerr << "General error: " << e.what() << std::endl;
     }
     
-    size_t duration_out, duration_dec;
-    size_t duration_out_then_dec;
+    size_t duration_out = 0;
+    size_t duration_dec = 0;
+    size_t duration_out_then_dec = 0;
     vector<long> final(n_genes, 0);
     if (param.operate_then_serialize) {
         // read ctxt_out
@@ -605,7 +628,7 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
         //std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
         std::string filename_ctxtOut = param.foldername_ctxtout;
 
-        for (size_t i = param.gene_start; i < static_cast<size_t>(param.gene_end); i++) {
+        for (size_t i = 0; i < n_genes; i++) {
             std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
             Ciphertext<DCRTPoly> ctxt;
             if (!Serial::DeserializeFromFile(filename_ctxtOut_i, ctxt, SerType::BINARY)) {
@@ -646,9 +669,10 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
         //std::string filename_ctxtOut = param.foldername_BFV + "/ctxt_out";
         std::string filename_ctxtOut = param.foldername_ctxtout;
 
+
         Plaintext plain;
         Ciphertext<DCRTPoly> ctxt;
-        for (size_t i = param.gene_start; i < static_cast<size_t>(param.gene_end); i++) {
+        for (size_t i = 0; i < n_genes; i++) {
             std::string filename_ctxtOut_i = filename_ctxtOut + "/ct_" + std::to_string(i) + ".txt";
             if (!Serial::DeserializeFromFile(filename_ctxtOut_i, ctxt, SerType::BINARY)) {
                 std::cerr << "Error reading serialization of the ctxt_out from " << filename_ctxtOut_i << std::endl;
@@ -660,7 +684,7 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
             cc->Decrypt(sk, ctxt, &plain);
             final[i] = plain->GetCoefPackedValue()[0];
             if (param.progress_bar)
-                print_progress_bar("decryptOutput", i, param.gene_end - param.gene_start, start_time_ctxt);
+                print_progress_bar("decryptOutput", i, n_genes, start_time_ctxt);
         }
         auto end_time_dec = std::chrono::high_resolution_clock::now();
         duration_out_then_dec = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_dec - start_time_ctxt).count();
@@ -668,6 +692,22 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
         std::cout << std::endl;
     }
     
+    // read kmerTable
+    std::cout << "=== read kmerTable ===" << std::endl;
+    auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
+    KmerTable kmerTableRef;
+        if (param.json_format) {
+        kmerTableRef.load(param.filename_kmerTable);
+    } else {
+        kmerTableRef.loadBinary(param.filename_kmerTable);
+    }
+    if (param.verbose) {
+        kmerTableRef.print();
+    }
+    auto end_time_kmerTable = std::chrono::high_resolution_clock::now();
+    auto duration_kmerTable = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerTable - start_time_kmerTable).count();
+    std::cout << "load kmerTable duration = " << duration_kmerTable << " ms" << std::endl;
+    std::cout << std::endl;
 
     cout << " === print gene vector === " << endl;
     for (size_t i = 0; i < final.size(); i++) {

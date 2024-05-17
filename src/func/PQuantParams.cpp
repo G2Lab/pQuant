@@ -43,6 +43,8 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->debug_n_gene = result["debug_n_gene"].as<int>();
     this->gene_start = result["gene_start"].as<int>();
     this->gene_end = result["gene_end"].as<int>();
+    this->batch_num = result["batch_num"].as<int>();
+    this->batch_num_total = result["batch_num_total"].as<int>();
     this->json_format = result["json"].as<bool>();
     this->operate_then_serialize = result["operate_then_serialize"].as<bool>();
 
@@ -83,6 +85,8 @@ void PQuantParams::print() {
     std::cout << "debug_n_gene = " << this->debug_n_gene << std::endl;
     std::cout << "gene_start = " << this->gene_start << std::endl;
     std::cout << "gene_end = " << this->gene_end << std::endl;
+    std::cout << "batch_num = " << this->batch_num << std::endl;
+    std::cout << "batch_num_total = " << this->batch_num_total << std::endl;
     std::cout << std::endl;
     std::cout << " == flags ==" << std::endl;
     std::cout << "verbose = " << this->verbose << std::endl;

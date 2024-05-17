@@ -31,7 +31,8 @@ public:
         isRef = true;
     }
 
-    KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_);
+    KmerTable(vector<Sequence>& gene, PQuantParams &param, bool=true);
+    KmerTable(vector<Sequence>& gene, PQuantParams &param, vector<size_t>& kmer_list);
 
     bool operator==(const KmerTable& other) const;
 

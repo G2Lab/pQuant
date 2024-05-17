@@ -242,6 +242,40 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
     }
 }
 
+KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, vector<size_t>& kmer_list) {
+    K = param.k;
+    thres = param.thres;
+    isRef = false;
+    n_gene = gene.size();
+
+    auto start_time = std::chrono::high_resolution_clock::now();
+    // case 2: from read
+    // count kmers in gene
+    for (size_t i = 0; i < gene.size(); i++) {
+        for (int j = 0; j < gene[i].getNumSeq(); j++) {
+            string seq = gene[i].getSeq(j);
+            if (seq.size() < static_cast<size_t>(K)) {
+                continue;
+            }
+            for (size_t k = 0; k < seq.size() - K + 1; k++) {
+                string kmer = seq.substr(k, K);
+                long num = convertKmerToNum(kmer);
+                if (num == -1) {
+                    continue;
+                }
+                size_t index;
+                size_t num_s = static_cast<size_t>(num);
+                if (binary_search_util(kmer_list, num_s, index)) {
+                    countRead[num] += 1;
+                }
+            }
+            if (param.progress_bar) {
+                print_progress_bar("Encode strings", j, gene[i].getNumSeq(), start_time);
+            }
+        }
+    }
+}
+
 bool KmerTable::operator==(const KmerTable& other) const {
     if (K != other.K || thres != other.thres || n_gene != other.n_gene || n_kmer_total != other.n_kmer_total || isRef != other.isRef) {
         cout << "K, thres, n_gene, n_kmer_total, or isRef is different\n"

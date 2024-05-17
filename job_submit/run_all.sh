@@ -18,13 +18,14 @@ THRES=0.001
 N_GENES=5000
 N_BATCH=250
 MEM="200G"
+BATCH_MEM="20G"
 GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
 READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_paired_fastqs/5k_random_protein_coding_genes.combined_exons.genes_only.concatenated.fq"
 DATA=""
 OUT_DIR="../out/021624"
 
 # Parse command line arguments
-while getopts ":k:g:r:t:n:b:m:d:o:" opt; do
+while getopts ":k:g:r:t:n:b:M:m:d:o:" opt; do
   case ${opt} in
     k )
       K=$OPTARG
@@ -44,8 +45,11 @@ while getopts ":k:g:r:t:n:b:m:d:o:" opt; do
     b )
       N_BATCH=$OPTARG
       ;;
-    m )
+    M )
       MEM=$OPTARG
+      ;;
+    m )
+      BATCH_MEM=$OPTARG
       ;;
     d )
       DATA=$OPTARG
@@ -123,19 +127,21 @@ echo "STEP3: submitted job ${JOBID_STEP3}"
 # Step 4 (waits for Step 3 to finish)
 # divide N_GENES by NUM_BATCH
 # set GENE_START and GENE_END, and add argument by --gs and --ge
-N_GENES_PER_BATCH=$(echo "(${N_GENES} - 1) / ${N_BATCH} + 1" | bc)
+# N_GENES_PER_BATCH=$(echo "(${N_GENES} - 1) / ${N_BATCH} + 1" | bc)
 STEP4_JOB_IDS=()  # Initialize an array to store Step 4 job IDs
 
 for i in $(seq 1 ${N_BATCH})
 do
-    GENE_START=$(((${i} - 1) * ${N_GENES_PER_BATCH}))
-    GENE_END=$(((${i} * ${N_GENES_PER_BATCH}) - 1))
-    if [ ${GENE_END} -ge ${N_GENES} ]
-    then
-        GENE_END=$((${N_GENES} - 1))
-    fi
+    # GENE_START=$(((${i} - 1) * ${N_GENES_PER_BATCH}))
+    # GENE_END=$(((${i} * ${N_GENES_PER_BATCH}) - 1))
+    # if [ ${GENE_END} -ge ${N_GENES} ]
+    # then
+    #     GENE_END=$((${N_GENES} - 1))
+    # fi
+    BATCH_NUM=$((i - 1))
     echo "gene start: ${GENE_START}, gene end: ${GENE_END}"
-    JOBID_STEP4=$(sbatch --output="${STEP4_FOLDER}/step4_${i}.txt" --mem=${MEM} --dependency=afterany:${JOBID_STEP3} --array=${i} --parsable run_single_step.sh STEP4 "${GLOBAL_ARGUMENT} --gs ${GENE_START} --ge ${GENE_END}")
+    # JOBID_STEP4=$(sbatch --output="${STEP4_FOLDER}/step4_${i}.txt" --mem=${MEM} --dependency=afterany:${JOBID_STEP3} --array=${i} --parsable run_single_step.sh STEP4 "${GLOBAL_ARGUMENT} --gs ${GENE_START} --ge ${GENE_END}")
+    JOBID_STEP4=$(sbatch --output="${STEP4_FOLDER}/step4_${i}.txt" --mem=${BATCH_MEM} --dependency=afterany:${JOBID_STEP3} --array=${i} --parsable run_single_step.sh STEP4 "${GLOBAL_ARGUMENT} --bn ${BATCH_NUM} --bt ${N_BATCH}")
     STEP4_JOB_IDS+=(${JOBID_STEP4})  # Store the job ID in the array
     echo "STEP4 ${i}: submitted job ${JOBID_STEP4}"
 done

@@ -35,6 +35,8 @@ int main(int argc, char **argv) {
         ("dng,debug_n_gene", "fix number of genes", cxxopts::value<int>()->default_value("-1"))
         ("gs,gene_start", "starting number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
+        ("bt,batch_num_total", "total number of batches", cxxopts::value<int>()->default_value("-1"))
+        ("bn, batch_num", "current batch number", cxxopts::value<int>()->default_value("-1"))
         ("ots,operate_then_serialize", "finish encrypt/decrypt and then serialize outputs", cxxopts::value<bool>()->default_value("false"))
         ("h,help", "Print usage")
     ;
