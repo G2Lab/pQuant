@@ -1,0 +1,28 @@
+# File paths
+#samples: config/samples.csv
+samples_paired: config/samples_paired_de.csv
+
+test_samples: config/test_samples.csv
+
+test_samples_paired: config/test_samples_paired.csv
+benchmark_samples: config/benchmark_samples.csv
+
+reference_prefix: gencode.v44.basic.annotation.subset
+star_kallisto_reference_prefix: gencode.v44.basic.annotation.subset
+#reference_prefix: gencode.v44.basic.annotation.unmerged
+
+genome_fasta: GRCh38.primary_assembly.genome.fa
+transcript_fasta: gencode.v44.transcripts.fa
+primary_gtf: gencode.v44.basic.annotation.gtf
+
+benchmark_paired_end_reads: data/encode/original/ENCLB059ZZZ/ENCLB059ZZZ.concat.fastq
+benchmark_pquant_enc_sample: ENCLB059ZZZ.concat
+
+pquant_batch_size: 200
+
+# Additional parameters
+params:
+  subsample_reads: True
+
+
+
