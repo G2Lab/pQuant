@@ -1,4 +1,4 @@
-# PQuant_HE - secure pQuant algorithm
+# PQuant: Secure gene expression quantification from RNA-seq data
 
 # Overview
 
