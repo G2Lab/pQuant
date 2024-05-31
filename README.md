@@ -19,7 +19,7 @@ Please intall the following dependencies to guarantee compatibility with the pQu
 
 ### Installing OpenFHE
 
-OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. 
+OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer to the [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. 
 Follow the steps below for a successful installation on Linux:
 ```bash
     git clone https://github.com/openfheorg/openfhe-development.git
@@ -32,8 +32,8 @@ Follow the steps below for a successful installation on Linux:
     make install
 ```
 
-### Building PQuant_HE
-To compile the PQuant_HE project:
+### Building pQuant
+To compile the pQuant project:
 ```bash
     mkdir build
     cd build
@@ -49,7 +49,7 @@ This command will test the BFV schemes from the OpenFHE library and output runti
 
 ## Execution via Slurm
 
-PQuant_HE is optimized for batch processing using Slurm. Scripts are located in the `job_submit/` folder.
+pQuant is optimized for batch processing using Slurm. Scripts are located in the `job_submit/` folder.
 
 ### Running All Jobs
 Navigate to the job submission directory and execute the jobs with:
