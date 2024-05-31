@@ -2,15 +2,15 @@
 
 # Overview
 
-PQuant_HE is a facilitating secure computation on encrypted genomic data. 
-This implementation leverages the OpenFHE library to ensure robust, secure operations without compromising on computational efficiency. 
-Below are the detailed instructions to help you set up and run the PQuant_HE environment.
+pQuant performs secure computation on encrypted RNA-seq reads to quantify the gene expression levels for all genes by leveraging homomoprhic encryption. 
+This implementation uses the OpenFHE library to ensure robust, secure operations without compromising from computational efficiency. 
+Below are the detailed instructions to help you set up and run the pQuant environment.
 
 ## Installation
 
 ### Prerequisites and Dependencies
 
-Ensure the installation of the following dependencies to guarantee compatibility with the PQuant_HE setup:
+Please intall the following dependencies to guarantee compatibility with the pQuant setup:
 
 - cmake: version 3.16.3 or later
 - gcc: version 9.2.0 or later
