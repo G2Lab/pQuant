@@ -1,4 +1,4 @@
-# PQuant: Secure gene expression quantification from RNA-seq data
+# pQuant: Secure gene expression quantification from RNA-seq data
 
 # Overview
 
