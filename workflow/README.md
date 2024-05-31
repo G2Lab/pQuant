@@ -1,7 +1,7 @@
-to add:
+## pQuant Snakemake workflow 
+This directory contains the Snakemake workflow and associated plotting code that was used to produce our results
 
-- mention pQuant was cloned into a tools subdirectory
-- copy, clean, and add figure notebook
-- clean up align.smk to remove old rules
-- describe what each script in scripts/ was used for
-- describe conda requirements.txt
+
+### Notes
+- To run this workflow, this repository was cloned and code compiled in "tools/pQuant_enc"
+- Packages installed in the conda environment used to run this workflow are listed in "requirements.txt"

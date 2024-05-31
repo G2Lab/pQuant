@@ -2,7 +2,7 @@
 
 
 **create_pquant_kallisto_star_references_from_gtf.py** </br>
-Used to create index files for STAR, kallisto, and pQuant
+Used to create index files for STAR, kallisto, and pQuant.
 
 **concatenate_paired_end_reads.py** </br>
 Used to concatenate pairs of reads from paired-end FASTQ files
