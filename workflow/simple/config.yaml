@@ -1,0 +1,26 @@
+# HPC settings
+cluster:
+  mkdir -p logs/{rule} &&
+  sbatch
+    --partition={resources.partition}
+    --cpus-per-task={threads}
+    --mem={resources.mem_mb}
+    --job-name=smk-{rule}-{wildcards}
+    --output=snakemake_output/{rule}-{wildcards}-%j.out
+default-resources:
+  - partition=pe2
+  - mem_mb=4000
+  - cpus=1
+max-jobs-per-second: 1
+max-status-checks-per-second: 1
+local-cores: 1
+latency-wait: 240
+jobs: 150
+restart-times: 0
+keep-going: True
+rerun-incomplete: True
+printshellcmds: True
+cluster-cancel: scancel
+cluster-cancel-nargs: 50
+scheduler: greedy
+use-conda: True

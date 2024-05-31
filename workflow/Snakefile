@@ -1,0 +1,18 @@
+configfile: "config/config.yaml"
+
+
+include: "rules/common.smk"
+include: "rules/align.smk"
+include: "rules/pQuant_enc.smk"
+
+
+rule all:
+    input:
+        STAR_align_paired_output() + \
+        kallisto_align_paired_output() + \
+        pQuant_enc_step_one_output() + \
+        pQuant_enc_step_two_output() + \
+        pQuant_enc_step_three_output() + \ 
+        batch_files_output() + \
+        pQuant_enc_step_four_output() + \
+        pQuant_enc_step_five_output()
