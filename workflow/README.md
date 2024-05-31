@@ -19,4 +19,3 @@ A Jupyter notebook containing code used to create figures in the paper
 ### Notes
 - To run this workflow, this repository was cloned and code compiled in "tools/pQuant_enc"
 - Files are briefly described in the respective subdirectory README.md files
-Used to create index files for STAR, kallisto, and pQuant.
