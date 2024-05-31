@@ -1,16 +1,16 @@
-# PQuant_HE - secure pQuant algorithm
+# PQuant: Secure gene expression quantification from RNA-seq data
 
 # Overview
 
-PQuant_HE is a facilitating secure computation on encrypted genomic data. 
-This implementation leverages the OpenFHE library to ensure robust, secure operations without compromising on computational efficiency. 
-Below are the detailed instructions to help you set up and run the PQuant_HE environment.
+pQuant performs secure computation on encrypted RNA-seq reads to quantify the gene expression levels for all genes by leveraging homomoprhic encryption. 
+This implementation uses the OpenFHE library to ensure robust, secure operations without compromising from computational efficiency. 
+Below are the detailed instructions to help you set up and run the pQuant environment.
 
 ## Installation
 
 ### Prerequisites and Dependencies
 
-Ensure the installation of the following dependencies to guarantee compatibility with the PQuant_HE setup:
+Please intall the following dependencies to guarantee compatibility with the pQuant setup:
 
 - cmake: version 3.16.3 or later
 - gcc: version 9.2.0 or later
@@ -19,7 +19,7 @@ Ensure the installation of the following dependencies to guarantee compatibility
 
 ### Installing OpenFHE
 
-OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. 
+OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer to the [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. 
 Follow the steps below for a successful installation on Linux:
 ```bash
     git clone https://github.com/openfheorg/openfhe-development.git
@@ -32,8 +32,8 @@ Follow the steps below for a successful installation on Linux:
     make install
 ```
 
-### Building PQuant_HE
-To compile the PQuant_HE project:
+### Building pQuant
+To compile the pQuant project:
 ```bash
     mkdir build
     cd build
@@ -49,7 +49,7 @@ This command will test the BFV schemes from the OpenFHE library and output runti
 
 ## Execution via Slurm
 
-PQuant_HE is optimized for batch processing using Slurm. Scripts are located in the `job_submit/` folder.
+pQuant is optimized for batch processing using Slurm. Scripts are located in the `job_submit/` folder.
 
 ### Running All Jobs
 Navigate to the job submission directory and execute the jobs with:
