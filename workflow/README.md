@@ -2,9 +2,6 @@
 This directory contains the Snakemake workflow and associated plotting code that was used to produce our results
 
 
-### Notes
-- To run this workflow, this repository was cloned and code compiled in "tools/pQuant_enc"
-- Files are briefly described in the respective subdirectory README.md files
 
 ### Directory contents
 **Snakefile** </br>
@@ -18,3 +15,8 @@ A list of packages installed in the conda environment used to run this workflow
 
 **paper_figures.ipynb** </br>
 A Jupyter notebook containing code used to create figures in the paper
+
+### Notes
+- To run this workflow, this repository was cloned and code compiled in "tools/pQuant_enc"
+- Files are briefly described in the respective subdirectory README.md files
+Used to create index files for STAR, kallisto, and pQuant.
