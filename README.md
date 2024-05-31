@@ -6,6 +6,9 @@ pQuant performs secure computation on encrypted RNA-seq reads to quantify the ge
 This implementation uses the OpenFHE library to ensure robust, secure operations without compromising from computational efficiency. 
 Below are the detailed instructions to help you set up and run the pQuant environment.
 
+### Analysis pipeline
+A Snakemake pipeline used to produce our results is included in the "workflow/" subdirectory. This directory also contains scripts for reference creation and read concatenation for pQuant.
+
 ## Installation
 
 ### Prerequisites and Dependencies
@@ -75,6 +78,5 @@ The results are stored in `<OUT_DIR>` folder. The slurm script creates a folder 
 - `<OUT_DIR>/<SLURM_JOB_ID>/kmer`: all results from pQuant algorithm are stored. In our implementation, kmer table and the index of kmer are stored.
 - `<OUT_DIR>/<SLURM_JOB_ID>/slurm_out`: all logs are stored. 
 
-### Analysis pipeline
-A Snakemake pipeline used to produce our results is included in the "workflow/" subdirectory. This directory also contains scripts for reference creation and read concatenation for pQuant.
+
 
