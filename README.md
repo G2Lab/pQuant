@@ -11,6 +11,10 @@ A Snakemake pipeline used to produce our results is included in the "workflow/" 
 
 ## Installation
 
+### OS requirements
+
+The package has been tested on Linux, specifically CentOS 7.9.2009. It can also run on macOS, but the CMake file may need to be revised for that. In the current version, running on Linux is recommended.
+
 ### Prerequisites and Dependencies
 
 Please intall the following dependencies to guarantee compatibility with the pQuant setup:
@@ -22,7 +26,7 @@ Please intall the following dependencies to guarantee compatibility with the pQu
 
 ### Installing OpenFHE
 
-OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer to the [official document](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. We specifically use 1.1.2 version.
+OpenFHE is a public library that supports various homomorphic encryption schemes, especially BFV scheme. Please refer to the [official documentation](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for details. We specifically use version 1.1.2.
 
 Follow the steps below for a successful installation on Linux:
 ```bash
@@ -35,7 +39,7 @@ Follow the steps below for a successful installation on Linux:
     make -j
     make install
 ```
-All installation for openFHE takes < 10min in our system.
+The installation for openFHE takes less than 10 minutes in our system.
 
 ### Building pQuant
 To compile the pQuant project:
@@ -46,7 +50,7 @@ To compile the pQuant project:
     cmake ..
     make -j
 ```
-The compilation takes < 1min in our system. Upon successful compilation, the executable named pquant is generated. Test the installation using:
+The compilation takes less than 1 minutes in our system. Upon successful compilation, the executable named pquant is generated. Test the installation using:
 ```bash
     # cd ~/build
     ./pquant -t bench
