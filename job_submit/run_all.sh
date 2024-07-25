@@ -4,8 +4,7 @@
 #SBATCH --nodes=1                 # Number of nodes
 #SBATCH --ntasks-per-node=1       # Number of tasks (MPI processes) per node
 #SBATCH --cpus-per-task=1         # Number of CPU cores per task
-#SBATCH --mem=40G                  # Memory per node (adjust as needed)
-#SBATCH --mail-user=shong@nygenome.org   # Specify your email address
+#SBATCH --mem=40G                  # Memory per node (adjust as neede
 
 # Navigate to the directory containing your executable
 cd $(pwd)
@@ -19,10 +18,10 @@ N_GENES=5000
 N_BATCH=250
 MEM="200G"
 BATCH_MEM="20G"
-GENE_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/5k_random_protein_coding_genes.combined_exons.exons.fa"
-READ_PATH="/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/test_paired_fastqs/5k_random_protein_coding_genes.combined_exons.genes_only.concatenated.fq"
+GENE_PATH=""
+READ_PATH=""
 DATA=""
-OUT_DIR="../out/021624"
+OUT_DIR="../out"
 
 # Parse command line arguments
 while getopts ":k:g:r:t:n:b:M:m:d:o:" opt; do
@@ -132,15 +131,8 @@ STEP4_JOB_IDS=()  # Initialize an array to store Step 4 job IDs
 
 for i in $(seq 1 ${N_BATCH})
 do
-    # GENE_START=$(((${i} - 1) * ${N_GENES_PER_BATCH}))
-    # GENE_END=$(((${i} * ${N_GENES_PER_BATCH}) - 1))
-    # if [ ${GENE_END} -ge ${N_GENES} ]
-    # then
-    #     GENE_END=$((${N_GENES} - 1))
-    # fi
     BATCH_NUM=$((i - 1))
     echo "gene start: ${GENE_START}, gene end: ${GENE_END}"
-    # JOBID_STEP4=$(sbatch --output="${STEP4_FOLDER}/step4_${i}.txt" --mem=${MEM} --dependency=afterany:${JOBID_STEP3} --array=${i} --parsable run_single_step.sh STEP4 "${GLOBAL_ARGUMENT} --gs ${GENE_START} --ge ${GENE_END}")
     JOBID_STEP4=$(sbatch --output="${STEP4_FOLDER}/step4_${i}.txt" --mem=${BATCH_MEM} --dependency=afterany:${JOBID_STEP3} --array=${i} --parsable run_single_step.sh STEP4 "${GLOBAL_ARGUMENT} --bn ${BATCH_NUM} --bt ${N_BATCH}")
     STEP4_JOB_IDS+=(${JOBID_STEP4})  # Store the job ID in the array
     echo "STEP4 ${i}: submitted job ${JOBID_STEP4}"

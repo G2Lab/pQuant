@@ -6,7 +6,6 @@
 #include "util/Define.h"
 #include "util/KmerTable.h"
 #include "func/Functions.h"
-#include "func/Entropy.h"
 #include "func/PQuantParams.h"
 #include "openfhe.h"
 #include <filesystem>

@@ -1,0 +1,55 @@
+ == file paths ==
+data name = five
+filename_read = ../dataset/five_genes/five_gene_reads.fa
+filename_ref = ../dataset/five_genes/five_gene_reference.fa
+filename_kmerTable = ../out/46867002/kmer/kmertable_five.bin
+filename_kmerList = ../out/46867002/kmer/kmerlist_five.bin
+foldername_BFV = ../out/46867002/bfv
+foldername_ctxtread = ../out/46867002/bfv/ctxtread
+foldername_ctxtout = ../out/46867002/bfv/ctxtout
+
+ == default parameters ==
+k = 10
+thres = 1e-05
+target = STEP2
+
+ == conditional parameters ==
+debug_n_gene = -1
+gene_start = -1
+gene_end = -1
+batch_num = -1
+batch_num_total = -1
+
+ == flags ==
+verbose = 0
+json_format = 1
+print_progress_bar = 1
+operate_then_serialize = 0
+=== GenCryptoContext ===
+GenCryptoContext duration = 19 ms
+
+
+p = 536903681
+n = 8192
+log2 q = 120
+
+=== KeyGen ===
+KeyGen duration = 13 ms
+
+Directory created: "../out/46867002/bfv"
+=== Serialize ===
+The cryptocontext has been serialized in ../out/46867002/bfv/context.txt
+The public key has been serialized in ../out/46867002/bfv/key-private.txt
+The secret key has been serialized in ../out/46867002/bfv/key-private.txt
+The eval mult keys have been serialized in ../out/46867002/bfv/key-eval-mult.txt
+Serialize duration = 41 ms
+ === Duration summaries ===
+GenCryptoContext duration = 19 ms
+KeyGen duration = 13 ms
+Serialize duration = 41 ms
+total duration = 73 ms
+filesize of ../out/46867002/bfv/context.txt = 0.538086 KB
+filesize of ../out/46867002/bfv/key-public.txt = 256.784 KB
+filesize of ../out/46867002/bfv/key-private.txt = 128.692 KB
+filesize of ../out/46867002/bfv/key-eval-mult.txt = 513.079 KB
+Memory usage = 7 MB (pick = 169 MB)

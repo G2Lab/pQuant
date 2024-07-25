@@ -1,6 +1,5 @@
 #include "cxxopts.hpp"
 #include "func/Sequence.h"
-#include "func/Entropy.h"
 #include "openfhe.h"
 #include "Task.h"
 #include "MainAlgorithmSet.h"

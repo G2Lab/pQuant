@@ -39,7 +39,6 @@ build/*
 openfhe/*
 dataset/*
 crypto/*
-*.txt
 *.bin
 *.csv
 *.png
