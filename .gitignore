@@ -34,10 +34,8 @@
 *.json
 
 build/*
-*.fa
 
 openfhe/*
-dataset/*
 crypto/*
 *.bin
 *.csv
