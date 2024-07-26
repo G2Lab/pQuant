@@ -70,7 +70,7 @@ To test with our small dataset, run following command:
     cd job_submit
     sbatch run_all.sh -k 10 -d five -t 0.00001 -n 5 -b 3 -m "20G" -o ../out
 ```
-This code will run with our sample dataset in `data/five_genes` folder, which contains reads & references from 5 genes. The output will be stored in `~/out` directory. The expected outputs are stored in the directory. Total expected runtime is less than a minute.
+This code will run with our sample dataset in `dataset/five_genes` folder, which contains reads & references from 5 genes. The output will be stored in `~/out` directory. The expected outputs are stored in the directory. Total expected runtime is less than a minute.
 
 ### Running All Jobs
 Navigate to the job submission directory and execute the jobs with:
