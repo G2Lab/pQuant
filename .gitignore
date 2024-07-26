@@ -35,6 +35,7 @@
 
 build/*
 
+.vscode/*
 openfhe/*
 openfhe-development/*
 crypto/*
