@@ -36,6 +36,7 @@
 build/*
 
 openfhe/*
+openfhe-development/*
 crypto/*
 *.bin
 *.csv
