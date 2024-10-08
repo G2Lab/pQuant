@@ -188,7 +188,7 @@ void Task::bfvBenchmark(PQuantParams &param) {
 
 
     // benchmark each operations
-    long iteration = 1000;
+    long iteration = 10;
     cout << "<<< every algorithm is iterated " << iteration << " times >>> " << endl << endl;
 
     // generate random plaintexts

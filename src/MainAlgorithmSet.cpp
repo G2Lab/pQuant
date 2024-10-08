@@ -1,18 +1,16 @@
 #include "MainAlgorithmSet.h"
-
 void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
     // read fasta file (reference)
     vector<Sequence> seq_vec;
-    auto start_time = std::chrono::high_resolution_clock::now();
+    auto start_time_readFastaFile = std::chrono::high_resolution_clock::now();
     cout << "=== read fasta file ===" << endl;
     readFastaFile(param.filename_ref, seq_vec);
-    auto end_time = std::chrono::high_resolution_clock::now();
-    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
-    std::cout << "readFastaFile duration = " << duration << " ms" << std::endl;
+    auto end_time_readFastaFile = std::chrono::high_resolution_clock::now();
+    auto duration_readFastaFile = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_readFastaFile - start_time_readFastaFile).count();
+    std::cout << "readFastaFile duration = " << duration_readFastaFile << " ms" << std::endl;
     std::cout << std::endl;
 
     // generate kmerTable
-
     cout << "=== compute kmerTable ===" << endl;
     auto start_time_kmerTable = std::chrono::high_resolution_clock::now();
     KmerTable kmerTable(seq_vec, param, true);
@@ -23,6 +21,7 @@ void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
     if (param.verbose) {
         kmerTable.print();
     }
+
     // save kmerTable & kmerList to file
     cout << "=== save kmerTable & kmerList to file ===" << endl;
     std::filesystem::path dir_path = param.foldername_kmer;
@@ -47,10 +46,10 @@ void MainAlgorithmSet::generateKmerTableFromReference(PQuantParams &param) {
     std::cout << std::endl;
 
     cout << " === Duration summaries ===" << endl;
-    cout << "readFastaFile duration = " << duration << " ms" << endl;
+    cout << "readFastaFile duration = " << duration_readFastaFile << " ms" << endl;
     cout << "computeKmerTable duration = " << duration_kmerTable << " ms" << endl;
     cout << "save duration = " << duration_save << " ms" << endl;
-    cout << "total duration = " << duration + duration_kmerTable + duration_save << " ms" << endl;
+    cout << "total duration = " << duration_readFastaFile + duration_kmerTable + duration_save << " ms" << endl;
     printFileSize(param.filename_kmerTable);
     printFileSize(param.filename_kmerList);
     printMemoryUsage();
@@ -416,11 +415,11 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
 
     size_t start = 0;
     size_t end = kmerTableRef.n_gene;
+
     if (param.batch_num_total >= 0) {
-        long n_genes_per_batch = (kmerTableRef.n_gene - 1) / param.batch_num_total + 1;
         if (param.batch_num >= 0) {
-            start = param.batch_num * n_genes_per_batch;
-            end = (param.batch_num + 1) * n_genes_per_batch;
+            start = param.batch_num * kmerTableRef.n_gene / param.batch_num_total;
+            end = (param.batch_num + 1) * kmerTableRef.n_gene / param.batch_num_total;
             end = end < kmerTableRef.n_gene ? end : kmerTableRef.n_gene;
         } else {
             start = 0;
@@ -480,6 +479,9 @@ void MainAlgorithmSet::computeInnerProductBatch(PQuantParams &param) {
     std::cout << "read ctxtRead duration = " << duration_ctxtRead << " ms" << std::endl;
     std::cout << std::endl;
     
+    std::cout << "start = " << start << endl;
+    std::cout << "end = " << end << endl;
+
     // encode kmerTable
     std::cout << "=== encode kmerTable and mult ===" << std::endl;
     auto start_time_encode_and_mult = std::chrono::high_resolution_clock::now();

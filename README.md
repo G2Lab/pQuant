@@ -23,6 +23,7 @@ Please intall the following dependencies to guarantee compatibility with the pQu
  - gcc: version 9.2.0
  - llvm: version 9.0.0
  - clang: version 9.0.0
+ - snakemake: version 7.30.1
 
 ### Installing OpenFHE
 

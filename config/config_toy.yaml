@@ -1,0 +1,24 @@
+K: 15
+THRES: 0.0001
+N_BATCH: 3
+exe: "build/pquant"
+OUT_DIR: "out"
+GENE_PATH: "dataset/five_genes/five_gene_reference.fa"
+READ_PATH: "dataset/five_genes/five_gene_reads.fa"
+
+slurm:
+  step1:
+    mem: "200G"
+    cpus: 8
+  step2:
+    mem: "1G"
+    cpus: 1
+  step3:
+    mem: "200G"
+    cpus: 8
+  step4:
+    mem: "200G"
+    cpus: 8
+  step5:
+    mem: "200G"
+    cpus: 8

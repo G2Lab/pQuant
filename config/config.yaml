@@ -1,0 +1,29 @@
+K: 15
+THRES: 1e-9
+N_BATCH: 500
+exe: "build/pquant"
+OUT_DIR: "out"
+GENE_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/gencode.v44.basic.annotation.subset.exons.fa"
+READ_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/encode/original/ENCLB059ZZZ/ENCLB059ZZZ.concat.fastq"
+
+slurm:
+  step1:
+    mem: "200G"
+    cpus: 8
+    threads: 8
+  step2:
+    mem: "1G"
+    cpus: 1
+    threads: 8
+  step3:
+    mem: "200G"
+    cpus: 8
+    threads: 8
+  step4:
+    mem: "50G"
+    cpus: 8
+    threads: 8
+  step5:
+    mem: "200G"
+    cpus: 8
+    threads: 8

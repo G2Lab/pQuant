@@ -152,6 +152,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 
         std::map<size_t, float> entropy_total;
         // compute entropy
+        start_time = std::chrono::high_resolution_clock::now();
         int progress_count = 0;
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             size_t kmer = it->first;
@@ -174,6 +175,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 
         // filter entropy
         progress_count = 0;
+        start_time = std::chrono::high_resolution_clock::now();
         for (auto it = entropy_total.begin(); it != entropy_total.end(); ++it) {
             if (it->second < thres) {
                 entropy.insert(make_pair(it->first, it->second));
@@ -186,6 +188,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
         entropy_total.clear();
 
         // filter kmer_occurance
+        start_time = std::chrono::high_resolution_clock::now();
         progress_count = 0;
         for (auto it = kmer_occurance.begin(); it != kmer_occurance.end(); ++it) {
             if (entropy.find(it->first) != entropy.end()) {
@@ -201,6 +204,7 @@ KmerTable::KmerTable(vector<Sequence>& gene, PQuantParams &param, bool isRef_) {
 
         // filter count_total
         progress_count = 0;
+        start_time = std::chrono::high_resolution_clock::now();
         for (auto it = count_total.begin(); it != count_total.end(); ++it) {
             map<size_t, size_t> gene_kmer_count = it->second;
             map<size_t, size_t> gene_kmer_count_filtered;

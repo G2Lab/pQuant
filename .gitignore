@@ -45,3 +45,6 @@ crypto/*
 *.pyc
 *.tsv
 summary/*
+log/*
+.snakemake/*
+out/*
