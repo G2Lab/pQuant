@@ -62,6 +62,9 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     if (foldername_ctxtout.size() == 0) {
         foldername_ctxtout = foldername_BFV + "/ctxtout";
     }
+
+    sim_num = result["sim_num"].as<int>();
+    sim_len = result["sim_len"].as<int>();
 }
 
 void PQuantParams::print() {

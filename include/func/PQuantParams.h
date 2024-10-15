@@ -38,6 +38,10 @@ class PQuantParams {
     bool progress_bar;
     bool operate_then_serialize;
 
+    // for simulated reads
+    int sim_num;
+    int sim_len;
+
     PQuantParams(cxxopts::ParseResult &result);
 
     void print();

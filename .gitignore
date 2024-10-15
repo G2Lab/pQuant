@@ -48,3 +48,4 @@ summary/*
 log/*
 .snakemake/*
 out/*
+out_test/

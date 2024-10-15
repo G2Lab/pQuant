@@ -1,7 +1,7 @@
 import os
 from datetime import datetime
 
-configfile: "config/config.yaml"
+configfile: "config/config_toy.yaml"
 
 job_id = config.get("job_id", datetime.now().strftime("%y%m%d-%H%M%S"))  # Use passed job_id or fallback to timestamp
 
@@ -32,7 +32,7 @@ rule step1_generate_kmerTable_cloud:
         cpus=config['slurm']['step1']['cpus']
     shell:
         """
-        {params.exe} -t STEP1 {GLOBAL_ARGS} > out/{job_id}/step1_generate_kmerTable_cloud.txt
+        {params.exe} -t STEP1 {GLOBAL_ARGS} > out/{job_id}/log/step1_generate_kmerTable_cloud.txt
         touch {output}
         """
 
@@ -48,7 +48,7 @@ rule step2_he_keygen_local:
         cpus=config['slurm']['step2']['cpus']
     shell:
         """
-        {params.exe} -t STEP2 {GLOBAL_ARGS} > out/{job_id}/step2_he_keygen_local.txt
+        {params.exe} -t STEP2 {GLOBAL_ARGS} > out/{job_id}/log/step2_he_keygen_local.txt
         touch {output}
         """
 
@@ -64,7 +64,7 @@ rule step3_encode_and_encrypt_local:
         cpus=config['slurm']['step3']['cpus']
     shell:
         """
-        {params.exe} -t STEP3 {GLOBAL_ARGS} > out/{job_id}/step3_encode_and_encrypt_local.txt
+        {params.exe} -t STEP3 {GLOBAL_ARGS} > out/{job_id}/log/step3_encode_and_encrypt_local.txt
         touch {output}
         """
 
@@ -81,14 +81,14 @@ rule step4_compute_matching_batch_cloud:
         cpus=config['slurm']['step4']['cpus']
     shell:
         """
-        mkdir -p out/{job_id}/step4
+        mkdir -p out/{job_id}/log/step4
         echo "Running batch {wildcards.batch}"
-        {params.exe} -t STEP4 {GLOBAL_ARGS} --bt {params.N_BATCH} --bn {wildcards.batch} > out/{job_id}/step4/step4_{wildcards.batch}.txt
+        {params.exe} -t STEP4 {GLOBAL_ARGS} --bt {params.N_BATCH} --bn {wildcards.batch} > out/{job_id}/log/step4/step4_{wildcards.batch}.txt
         """
 
 rule step4_compute_matching_all_cloud:
     input:
-        expand(f"out/{job_id}/step4/step4_{{batch}}.txt", batch=range(config['N_BATCH']))
+        expand(f"out/{job_id}/log/step4/step4_{{batch}}.txt", batch=range(config['N_BATCH']))
     output:
         f"out/{job_id}/tmp/step4_compute_matching_cloud.txt"
     resources:
@@ -112,7 +112,7 @@ rule step5_decrypt_and_return_gene_vector_local:
     shell:
         """
         mkdir -p out/{job_id}/bfv/ctxtout
-        {params.exe} -t STEP5 {GLOBAL_ARGS} > out/{job_id}/step5_decrypt_and_return_gene_vector_local.txt
+        {params.exe} -t STEP5 {GLOBAL_ARGS} > out/{job_id}/log/step5_decrypt_and_return_gene_vector_local.txt
         touch {output}
         """
 
@@ -131,7 +131,7 @@ rule init:
         cpus=1     # Number of CPUs
     shell:
         """
-        mkdir -p out/{job_id} && mkdir -p out/{job_id}/tmp
+        mkdir -p out/{job_id} && mkdir -p out/{job_id}/tmp && mkdir -p out/{job_id}/log
         touch {output[0]} && touch {output[1]}
         echo " === Parameters === " > {output[1]}
         echo "job_id: {job_id}" >> {output[1]}

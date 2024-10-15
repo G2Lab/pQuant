@@ -6,25 +6,26 @@ void printKmerTable(KmerTable &kmerTable, bool isRef) {
         for (auto &p : kmerTable.geneNameIndex) {
             std::cout << p << ", ";
         }
-        std::cout << std::endl << std::endl;
+        std::cout << std::endl
+                  << std::endl;
 
         std::cout << " KmerTable for reference" << std::endl;
         std::cout << "n_gene = " << kmerTable.n_gene << std::endl;
         std::cout << "n_kmer_total = " << kmerTable.n_kmer_total << std::endl;
 
-        for (const auto& geneEntry : kmerTable.count) {
+        for (const auto &geneEntry : kmerTable.count) {
             std::cout << "Gene: " << geneEntry.first << " (" << geneEntry.second.size() << " kmers)" << std::endl;
-        
-            for (const auto& kmerEntry : geneEntry.second) {
-                 std::cout << "(" << kmerEntry.first << ", " << kmerEntry.second << ") ";
+
+            for (const auto &kmerEntry : geneEntry.second) {
+                std::cout << "(" << kmerEntry.first << ", " << kmerEntry.second << ") ";
             }
-             std::cout << std::endl;
+            std::cout << std::endl;
         }
     } else {
         std::cout << " KmerTable for read" << std::endl;
         std::cout << "countRead.size() = " << kmerTable.countRead.size() << std::endl;
         for (auto &p : kmerTable.countRead) {
-             std::cout << "(" << p.first << ", " << p.second << ") ";
+            std::cout << "(" << p.first << ", " << p.second << ") ";
         }
     }
     std::cout << std::endl;
@@ -107,7 +108,7 @@ void encryptReadSparse(Ciphertext_1d &ct, KmerTable &kmerTableRead, KmerTable &k
             size_t num_slot = index % n_slots;
             plain_vec[num_vec][num_slot] = p.second;
         }
-        if (param.progress_bar) 
+        if (param.progress_bar)
             print_progress_bar("encodeRead", count, kmerTableRead.countRead.size(), start_time);
         count += 1;
     }
@@ -135,13 +136,11 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
     if (param.filename_kmerTable.size() > 0) {
         n_vec_per_gene = (kmerTableRef.n_kmer_total - 1) / n_slots + 1;
     }
-    
-    
+
     std::cout << "n_slots = " << n_slots << std::endl;
     std::cout << "n_genes = " << n_genes << std::endl;
     std::cout << "n_vec_per_gene = " << n_vec_per_gene << std::endl;
 
-    
     auto table_time = std::chrono::high_resolution_clock::now();
     auto table_duration = std::chrono::duration_cast<std::chrono::seconds>(table_time - start_time).count();
 
@@ -166,10 +165,10 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
         // multiply ciphertexts in ct with plaintexts in pt
         // result is stored in ct_out
         // ct_out[i] = ct[i] * pt[i]
-        
+
         size_t num_vec, num_slot;
-        map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
-        for (auto &kmerEntry: geneEntry) {
+        map<size_t, size_t> geneEntry = kmerTableRef.count[g];
+        for (auto &kmerEntry : geneEntry) {
             if (param.filename_kmerTable.size() == 0) {
                 num_vec = kmerEntry.first / n_slots;
                 num_slot = kmerEntry.first % n_slots;
@@ -183,7 +182,7 @@ void encodeRefKmer(KmerTable &kmerTableRef, Plaintext_2d &pt_ref, CryptoContext<
                 num_vec = index / n_slots;
                 num_slot = index % n_slots;
             }
-            
+
             if (num_slot == 0) {
                 plain_vec[num_vec][num_slot] += kmerEntry.second;
             } else {
@@ -222,13 +221,13 @@ void multCtxtByEncodedRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, Plaintext_2d
     long n_genes = pt_ref.size();
     // long n_vec_per_gene = pt_ref[0].size();
     ct_out.resize(n_genes);
-    
+
     cout << "before multCtxt" << endl;
     printMemoryUsage();
     cout << endl;
-    
+
     auto start_time_mult = std::chrono::high_resolution_clock::now();
-    for (int g = 0; g < n_genes; g++) {   
+    for (int g = 0; g < n_genes; g++) {
         for (size_t i = 0; i < ct.size(); i++) {
             if (i == 0) {
                 ct_out[g] = cc->EvalMult(ct[0], pt_ref[g][i]);
@@ -255,12 +254,11 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
         n_vec_per_gene = (kmerTableRef.n_kmer_total - 1) / n_slots + 1;
     }
     ct_out.resize(n_genes);
-    
+
     std::cout << "n_slots = " << n_slots << std::endl;
     std::cout << "n_genes = " << n_genes << std::endl;
     std::cout << "n_vec_per_gene = " << n_vec_per_gene << std::endl;
 
-    
     auto table_time = std::chrono::high_resolution_clock::now();
     auto table_duration = std::chrono::duration_cast<std::chrono::seconds>(table_time - start_time).count();
 
@@ -281,11 +279,11 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
         // result is stored in ct_out
         // ct_out[i] = ct[i] * pt[i]
         vector<vector<int64_t>> plain_vec = vector<vector<int64_t>>(n_vec_per_gene, vector<int64_t>(n_slots, 0));
-        
+
         size_t num_vec, num_slot;
-        map<size_t, size_t> geneEntry = kmerTableRef.count[g];        
+        map<size_t, size_t> geneEntry = kmerTableRef.count[g];
         auto start_time_encode = std::chrono::high_resolution_clock::now();
-        for (auto &kmerEntry: geneEntry) {
+        for (auto &kmerEntry : geneEntry) {
             if (param.filename_kmerTable.size() == 0) {
                 num_vec = kmerEntry.first / n_slots;
                 num_slot = kmerEntry.first % n_slots;
@@ -299,7 +297,7 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
                 num_vec = index / n_slots;
                 num_slot = index % n_slots;
             }
-            
+
             if (num_slot == 0) {
                 plain_vec[num_vec][num_slot] += kmerEntry.second;
             } else {
@@ -329,7 +327,7 @@ void multCtxtByKmerTableRef(Ciphertext_1d &ct_out, Ciphertext_1d &ct, KmerTable 
         auto duration_mult = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_mult - start_time_mult).count();
         mult_total_time += duration_mult;
     }
-    
+
     cout << "end multCtxt" << endl;
     cout << "encode_total_time = " << encode_total_time << " ms" << endl;
     cout << "mult_total_time = " << mult_total_time << " ms" << endl;
@@ -351,7 +349,7 @@ void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTP
 void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DCRTPoly> &cc) {
     // auto start_time = std::chrono::high_resolution_clock::now();
     std::string CTXT_FOLDER = "../crypto/ctxt";
-    
+
     ct = ct_vec[0];
     for (size_t i = 1; i < ct_vec.size(); i++) {
         ct = cc->EvalAdd(ct, ct_vec[i]);
@@ -361,14 +359,13 @@ void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DC
     }
 }
 
-
 void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, CryptoContext<DCRTPoly> &cc, string path_output) {
     // auto start_time = std::chrono::high_resolution_clock::now();
     std::string CTXT_FOLDER = "../crypto/ctxt";
     if (path_output != "") {
         CTXT_FOLDER = path_output;
     }
-    
+
     for (size_t g = 0; g < n_gene; g++) {
         string path = CTXT_FOLDER + "/gene" + to_string(g);
         Ciphertext<DCRTPoly> ct;
@@ -388,4 +385,90 @@ void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, Cr
         }
         ct_out.push_back(ct);
     }
+}
+
+void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t num_reads, vector<Sequence>& simulated_reads) {
+    // given gene sequences, generate simulated reads
+    // read_len: length of read
+    // num_reads: number of reads
+    // simulated_reads: output simulated reads
+
+    size_t gene_num = gene_seq.size();
+
+    cout << "gene_num = " << gene_num << endl;
+    cout << "read_len = " << read_len << endl;
+    cout << "num_reads = " << num_reads << endl;
+
+    vector<string> gene_concatenated;
+    for (size_t i = 0; i < gene_num; i++) {
+        string gene_concatenated_i = "";
+        for (size_t j = 0; j < gene_seq[i].numSeq; j++) {
+            gene_concatenated_i += gene_seq[i].seqVec[j];
+        }
+        gene_concatenated.push_back(gene_concatenated_i);
+    }
+
+    // remove genes of total length < read_len
+    for (size_t i = 0; i < gene_num; i++) {
+        if (gene_concatenated[i].size() <= read_len) {
+            gene_concatenated.erase(gene_concatenated.begin() + i);
+            i--;
+            gene_num--;
+        }
+    }
+
+    vector<float> gene_prob;
+    for (size_t i = 0; i < gene_num; i++) {
+        gene_prob.push_back(gene_concatenated[i].size() - read_len);
+    }
+    float gene_len_sum = accumulate(gene_prob.begin(), gene_prob.end(), 0.0);
+
+    // divide gene_len by gene_len_sum
+    for (size_t i = 0; i < gene_num; i++) {
+        gene_prob[i] = gene_prob[i] / gene_len_sum;
+        if (i > 0) {
+            gene_prob[i] += gene_prob[i - 1];
+        }
+    }
+
+    // initialize simulated_reads
+    simulated_reads.clear();
+    for (size_t i = 0; i < gene_num; i++) {
+        Sequence new_seq;
+        new_seq.geneName = gene_seq[i].geneName;
+        simulated_reads.push_back(new_seq);
+    }
+
+    for (size_t i = 0; i < num_reads; i++) {
+        // choose gene based on gene_prob
+        float r = (float)rand() / (float)RAND_MAX;
+        size_t gene_index = 0;
+        for (size_t j = 0; j < gene_num; j++) {
+            if (r < gene_prob[j]) {
+                gene_index = j;
+                break;
+            }
+        }
+        if (gene_index == gene_num) {
+            gene_index = rand() % gene_num;
+        }
+
+        // choose start position
+        size_t gene_len = gene_concatenated[gene_index].size();
+        size_t start_pos = rand() % (gene_len - read_len);
+
+        // generate read
+        string read = gene_concatenated[gene_index].substr(start_pos, read_len);
+
+        // check gene_name and add read to simulated_reads
+        string gene_name = gene_seq[gene_index].geneName;
+        for (size_t j = 0; j < gene_num; j++) {
+            if (gene_name == gene_seq[j].geneName) {
+                simulated_reads[j].addSeq(read);
+                break;
+            }
+        }
+    }
+
+
 }

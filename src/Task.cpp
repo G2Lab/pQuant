@@ -509,15 +509,222 @@ void Task::run_all(PQuantParams &param) {
 
 }
 
-// void Task::testReadJson(PQuantParams &param) {
-//     // Specify the path to your JSON file
-//     std::string filename = "../../pQuant_rust/kmer.json";
-//     std::ifstream file(filename);
-//     if (!file.is_open()) {
-//         throw runtime_error("Error: Failed to open file " + filename);
-//     } else {
-//         KmerTable kmerTable;
-//         parseJson(filename, kmerTable, param);
-//         printKmerTable(kmerTable, true);
-//     }
-// }
+void Task::testSimulatedReadEncoding(PQuantParams &param) {
+    vector<Sequence> seq_vec;
+    auto start_time_readFastaFile = std::chrono::high_resolution_clock::now();
+    cout << "=== read fasta file ===" << endl;
+    readFastaFile(param.filename_ref, seq_vec);
+    auto end_time_readFastaFile = std::chrono::high_resolution_clock::now();
+    auto duration_readFastaFile = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_readFastaFile - start_time_readFastaFile).count();
+    std::cout << "readFastaFile duration = " << duration_readFastaFile << " ms" << std::endl;
+    std::cout << std::endl;
+
+    // simulate read
+    auto start_time_simulateRead = std::chrono::high_resolution_clock::now();
+    cout << "=== simulate read ===" << endl;
+    vector<Sequence> reads_seq;
+
+    generateSimulatedReads(seq_vec, param.sim_len, param.sim_num, reads_seq);
+    auto end_time_simulateRead = std::chrono::high_resolution_clock::now();
+    auto duration_simulateRead = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_simulateRead - start_time_simulateRead).count();
+    std::cout << "simulateRead duration = " << duration_simulateRead << " ms" << std::endl;
+    std::cout << std::endl;
+
+    // // print simulatedRead to check
+    // cout << "=== print simulated read ===" << endl;
+    // for (auto &read_seq : reads_seq) {
+    //     if (read_seq.getNumSeq() > 0) {
+    //         cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
+    //         for (size_t i = 0; i < static_cast<size_t>(read_seq.getNumSeq()); i++) {
+    //             cout << "   " << read_seq.getSeq(i) << endl;
+    //         }
+    //     }
+    // }
+    
+    std::string filename_context = param.foldername_BFV + "/context.txt";
+    std::string filename_private = param.foldername_BFV + "/key-private.txt";
+
+    std::cout << "=== Deserialize ===" << std::endl;
+    auto start_time = std::chrono::high_resolution_clock::now();
+    // Deserialize the crypto context
+    CryptoContext<DCRTPoly> cc;
+    if (!Serial::DeserializeFromFile(filename_context, cc, SerType::BINARY)) {
+        std::cerr << "I cannot read serialization from " << filename_context << std::endl;
+        return;
+    }
+    std::cout << "The cryptocontext has been deserialized from " << filename_context << std::endl;
+
+    PrivateKey<DCRTPoly> sk;
+    if (!Serial::DeserializeFromFile(filename_private, sk, SerType::BINARY)) {
+        std::cerr << "Could not read secret key" << std::endl;
+        return;
+    }
+    std::cout << "The secret key has been deserialized from " << filename_private << std::endl;
+    auto end_time = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time).count();
+    std::cout << "Deserialize duration = " << duration << " ms" << std::endl;
+    std::cout << std::endl;
+
+    // read kmerList
+    std::cout << "=== load kmerList ===" << std::endl;
+    auto start_time_kmerList = std::chrono::high_resolution_clock::now();
+    vector<size_t> kmer_list;
+    if (param.json_format) {
+        loadKmerList(param.filename_kmerList, kmer_list);
+    } else {
+        loadKmerListBinary(param.filename_kmerList, kmer_list);
+    }
+    auto end_time_kmerList = std::chrono::high_resolution_clock::now();
+    auto duration_kmerList = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_kmerList - start_time_kmerList).count();
+    std::cout << "load kmerList duration = " << duration_kmerList << " ms" << std::endl;
+    std::cout << std::endl;
+
+    auto start_time_read = std::chrono::high_resolution_clock::now();
+    KmerTable kmerTableRead(reads_seq, param, kmer_list);
+    reads_seq.clear();
+    auto end_time_read = std::chrono::high_resolution_clock::now();
+    auto duration_read = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_read - start_time_read).count();
+    std::cout << "readFastaFile duration = " << duration_read << " ms" << std::endl;
+    if (param.verbose) {
+        kmerTableRead.print();
+    }
+    std::cout << std::endl;
+
+    if (param.verbose) {
+        for (size_t i = 0; i < kmer_list.size(); i++) {
+            std::cout << kmer_list[i] << " ";
+        }
+        cout << "kmer_list.size() = " << kmer_list.size() << endl;
+    }
+
+    size_t n_kmer_total = kmer_list.size();
+    size_t n_slots = cc->GetCryptoParameters()->GetElementParams()->GetCyclotomicOrder() / 2;
+    size_t n_plain_vecs = (n_kmer_total - 1) / n_slots + 1;
+    vector<vector<int64_t>> plain_vec(n_plain_vecs, vector<int64_t>(n_slots, 0));
+    
+    std::cout << "n_slots = " << n_slots << std::endl;
+    std::cout << "n_plain_vecs = " << n_plain_vecs << std::endl;
+    cout << "n_kmer_total = " << n_kmer_total << endl;
+
+    // encode kmerTableRead.countRead based on kmer_index
+    std::cout << "=== encode kmerTableRead.countRead ===" << std::endl;
+    auto start_time_encode = std::chrono::high_resolution_clock::now();
+    int count = 0;
+    size_t index;
+    for (auto &p : kmerTableRead.countRead) {
+        bool search = binary_search_util(kmer_list, p.first, index);
+        if (search) {
+            size_t num_vec = index / n_slots;
+            size_t num_slot = index % n_slots;
+            plain_vec[num_vec][num_slot] = p.second;
+        }
+        if (param.progress_bar) 
+            print_progress_bar("encodeRead", count, kmerTableRead.countRead.size(), start_time_encode);
+        count += 1;
+    }
+    auto end_time_encode = std::chrono::high_resolution_clock::now();
+    auto duration_encode = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encode - start_time_encode).count();
+    std::cout << "encodeRead duration = " << duration_encode << " ms" << std::endl;
+    std::cout << std::endl;
+
+    // encrypt plain_vec
+    std::cout << "=== encrypt plain_vec ===" << std::endl;
+    
+    std::string filename_ctxtRead = param.foldername_ctxtread;
+    // create folder if doesn't exist
+    if (!std::filesystem::exists(filename_ctxtRead)) {
+        std::filesystem::create_directory(filename_ctxtRead);
+    }
+
+    size_t duration_encrypt = 0;
+    size_t duration_serialize = 0;
+    size_t duration_encrypt_then_serialize = 0;
+    
+    cout << "before enc, check memory" << endl;
+    printMemoryUsage();
+    if (param.operate_then_serialize) {
+        auto start_time_encrypt = std::chrono::high_resolution_clock::now();
+        Ciphertext_1d ct;
+        for (size_t i = 0; i < n_plain_vecs; i++) {
+            Plaintext plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            Ciphertext<DCRTPoly> ciphertext = cc->Encrypt(sk, plain);
+            ct.push_back(ciphertext);
+
+            // update progress bar
+            if (param.progress_bar)
+                print_progress_bar("EncryptReadKmer", i, n_plain_vecs, start_time_encrypt);
+        }
+        auto end_time_encrypt = std::chrono::high_resolution_clock::now();
+        duration_encrypt = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encrypt - start_time_encrypt).count();
+        std::cout << "EncryptReadKmer duration = " << duration_encrypt << " ms" << std::endl;
+        std::cout << std::endl;
+        
+        // serialize ct
+        std::cout << "=== serialize ct ===" << std::endl;
+        auto start_time_serialize = std::chrono::high_resolution_clock::now();
+        // create folder if doesn't exist
+        if (!std::filesystem::exists(filename_ctxtRead)) {
+            std::filesystem::create_directory(filename_ctxtRead);
+        }
+        for (size_t i = 0; i < ct.size(); i++) {
+            std::string filename_ctxtRead_i = filename_ctxtRead + "/ct_" + std::to_string(i) + ".txt";
+            if (!Serial::SerializeToFile(filename_ctxtRead_i, ct[i], SerType::BINARY)) {
+                std::cerr << "Error writing serialization of the ctxtRead to " << filename_ctxtRead_i << std::endl;
+                return;
+            }
+            if (param.progress_bar) {
+                print_progress_bar("serializeCtxtRead", i, ct.size(), start_time_serialize);
+            }
+        }
+        auto end_time_serialize = std::chrono::high_resolution_clock::now();
+        duration_serialize = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_serialize - start_time_serialize).count();
+        std::cout << "serializeCtxtRead duration = " << duration_serialize << " ms" << std::endl;
+        std::cout << std::endl;
+    } else {
+        auto start_time_encrypt_and_serialize = std::chrono::high_resolution_clock::now();
+        Plaintext plain;
+        Ciphertext<DCRTPoly> ciphertext;
+        std::string filename_ctxtRead_i;
+        for (size_t i = 0; i < n_plain_vecs; i++) {
+            // encode & encrypt
+            plain = cc->MakeCoefPackedPlaintext(plain_vec[i]);
+            ciphertext = cc->Encrypt(sk, plain);
+
+            // serialize ctxt
+            filename_ctxtRead_i = filename_ctxtRead + "/ct_" + std::to_string(i) + ".txt";
+            if (!Serial::SerializeToFile(filename_ctxtRead_i, ciphertext, SerType::BINARY)) {
+                std::cerr << "Error writing serialization of the ctxtRead to " << filename_ctxtRead_i << std::endl;
+                return;
+            }
+
+            // update progress bar
+            if (param.progress_bar)
+                print_progress_bar("EncryptAndSerializeReadKmer", i, n_plain_vecs, start_time_encrypt_and_serialize);
+        }
+        auto end_time_encrypt_and_serialize = std::chrono::high_resolution_clock::now();
+        duration_encrypt_then_serialize = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_encrypt_and_serialize - start_time_encrypt_and_serialize).count();
+        std::cout << "EncryptAndSerializeReadKmer duration = " << duration_encrypt_then_serialize << " ms" << std::endl;
+        std::cout << std::endl;
+    }
+    
+    auto total_duration = duration_read + duration_kmerList + duration_encode;
+    std::cout << " === Duration summaries ===" << endl;
+    std::cout << "readFastaFile duration = " << duration_read << " ms" << endl;
+    std::cout << "load kmerList duration = " << duration_kmerList << " ms" << endl;
+    std::cout << "encodeRead duration = " << duration_encode << " ms" << endl;
+    if (param.operate_then_serialize) {
+        std::cout << "EncryptReadKmer duration = " << duration_encrypt << " ms" << endl;
+        std::cout << "serializeCtxtRead duration = " << duration_serialize << " ms" << std::endl;
+        total_duration = total_duration + duration_encrypt + duration_serialize;
+    } else {
+        std::cout << "EncryptAndSerializeReadKmer duration = " << duration_encrypt_then_serialize << " ms" << endl;
+        total_duration = total_duration + duration_encrypt_then_serialize;
+    }
+    
+    std::cout << "total duration = " << total_duration << " ms" << std::endl;
+    std::cout << std::endl;
+    std::cout << "single ctxt size" << endl;
+    printFileSize(filename_ctxtRead + "/ct_0.txt");
+    printFolderSize(filename_ctxtRead);
+    printMemoryUsage();
+}

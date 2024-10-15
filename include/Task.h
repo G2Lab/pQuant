@@ -8,6 +8,7 @@
 #include "func/Functions.h"
 #include "func/PQuantParams.h"
 #include "openfhe.h"
+#include <filesystem>
 
 
 using namespace std;
@@ -23,7 +24,7 @@ public:
 
     static void run_all(PQuantParams &param);
 
-    // static void testReadJson(PQuantParams &param);
+    static void testSimulatedReadEncoding(PQuantParams &param);
 };
 
 #endif

@@ -36,7 +36,10 @@ int main(int argc, char **argv) {
         ("ge,gene_end", "ending number index of gene", cxxopts::value<int>()->default_value("-1"))
         ("bt,batch_num_total", "total number of batches", cxxopts::value<int>()->default_value("-1"))
         ("bn, batch_num", "current batch number", cxxopts::value<int>()->default_value("-1"))
-        ("ots,operate_then_serialize", "finish encrypt/decrypt and then serialize outputs", cxxopts::value<bool>()->default_value("false"))
+        ("ots,operate_then_serialize", "finish encrypt/decrypt and then serialize outputs", cxxopts::value<bool>()->default_value("true"))
+        ("sim_num", "number of simulated reads", cxxopts::value<int>()->default_value("100"))
+        ("sim_len", "length of simulated reads", cxxopts::value<int>()->default_value("100"))
+        ("sim_out", "output file for simulated reads", cxxopts::value<std::string>()->default_value(""))
         ("h,help", "Print usage")
     ;
 
@@ -108,7 +111,14 @@ int main(int argc, char **argv) {
         cout << " ========================================== " << endl;
         cout << endl;
         MainAlgorithmSet::decryptAndReturnGeneVector(param);
-    } else {
+    } else if (param.target.compare("sim") == 0) {
+        cout << " ========================================== " << endl;
+        cout << " ============ Simulate Reads ============== " << endl;
+        cout << " ========================================== " << endl;
+        cout << endl;
+        Task::testSimulatedReadEncoding(param);
+    }
+    else {
         std::cout << "Invalid target algorithm" << std::endl;
         exit(0);
     }

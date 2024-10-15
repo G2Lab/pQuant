@@ -7,7 +7,7 @@ This implementation uses the OpenFHE library to ensure robust, secure operations
 Below are the detailed instructions to help you set up and run the pQuant environment.
 
 ### Analysis pipeline
-A Snakemake pipeline used to produce our results is included in the "workflow/" subdirectory. This directory also contains scripts for reference creation and read concatenation for pQuant.
+The pQuant pipeline is managed using Snakemake, which handles task execution based on defined rules. The snakemake workflow for plain code is provided in the workflow/ directory. This directory includes scripts for reference creation, read concatenation, and the main pQuant steps. The pipeline replaces the previous use of Slurm scripts and optimizes execution for both local and distributed computing environments.
 
 ## Installation
 
@@ -20,7 +20,7 @@ The package has been tested on Linux, specifically CentOS 7.9.2009. It can also 
 Please intall the following dependencies to guarantee compatibility with the pQuant setup:
 
  - cmake: version 3.16.3
- - gcc: version 9.2.0
+ - gcc: version 11.2.0
  - llvm: version 9.0.0
  - clang: version 9.0.0
  - snakemake: version 7.30.1
@@ -58,45 +58,106 @@ The compilation takes less than 1 minutes in our system. Upon successful compila
 ```
 This command will test the BFV schemes from the OpenFHE library and output runtime results for encode, encrypt, decrypt, add, and multiply operations.
 
-## Execution via Slurm
+## Running pQuant using Snakemake
 
-pQuant is optimized for batch processing using `Slurm`. Scripts are located in the `job_submit/` folder.
+In current version, pQuant is executed via Snakemake, which allows for management of computational resources and task dependencies.
 
-### Test Code
+### Configuration
 
-To test with our small dataset, run following command:
-```bash
-    # cd ~
-    mkdir out
-    cd job_submit
-    sbatch run_all.sh -k 10 -d five -t 0.00001 -n 5 -b 3 -m "20G" -o ../out
+Before running the pipeline, adjust the parameters in the `config/config.yaml` file:
+```yaml
+    K: 15
+    THRES: 0.0001
+    N_BATCH: 3
+    exe: "build/pquant"
+    OUT_DIR: "out"
+    GENE_PATH: "dataset/five_genes/five_gene_reference.fa"
+    READ_PATH: "dataset/five_genes/five_gene_reads.fa"
+
+    slurm:
+    step1:
+        mem: "200G"
+        cpus: 8
+    step2:
+        mem: "1G"
+        cpus: 1
+    step3:
+        mem: "200G"
+        cpus: 8
+    step4:
+        mem: "200G"
+        cpus: 8
+    step5:
+        mem: "200G"
+        cpus: 8
 ```
-This code will run with our sample dataset in `dataset/five_genes` folder, which contains reads & references from 5 genes. The output will be stored in `~/out` directory. The expected outputs are stored in the directory. Total expected runtime is less than a minute.
 
-### Running All Jobs
-Navigate to the job submission directory and execute the jobs with:
+### Running the Pipeline
+
+To run the entire pQuant workflow using Snakemake, execute the following commands:
 ```bash
-    cd ~/job_submit
-    sbatch run_all.sh -k <K> -g <GENE_PATH> -r <READ_PATH> -t <THRES> -n <N_GENES> -b <N_BATCH> -m <MEM> -o <OUT_DIR>
+    snakemake --cores <NUMBER_OF_CORES>
 ```
 
-The parameters we use are as listed:
- - K: k, size of k-mer
- - THRES: H, threshold of entropy
- - N_GENES: number of genes in dataset
- - N_BATCH: number of batches you want to run. The code automatically divides genes into N_BATCH number of batches and run STEP 4 in parallel. Each job runs with {N_GENES / N_BATCH} genes
- - GENE_PATH: gene(reference) path (.fa)
- - READ_PATH: read path (.fa, .fq, or .fastq)
- - MEM: allocated memory for each batched jobs (e.g. "200G" for 200GB memory)
- - OUT_DIR: directory that all output files (include saved table, HE contents, etc) are saved
+### Submitting the Snakemake Workflow to SLURM
+
+To submit the workflow to SLURM, use the following command:
+```bash
+    sbatch submit_snakemake.sh
+```
+
+Here is the example of the `submit_snakemake.sh` script:
+```sh
+#!/bin/bash
+#SBATCH --job-name=snakemake_workflow       # Job name
+#SBATCH --error=slurm_out/snakemake-%j.err  # Error file for Snakemake logs
+#SBATCH --output=slurm_out/snakemake-%j.out # Output file for Snakemake logs
+#SBATCH --cpus-per-task=8                   # Number of CPUs for Snakemake process
+#SBATCH --mem=16G                           # Memory to request for the Snakemake process
+
+# Set job_id to the SLURM job ID
+job_id=$SLURM_JOB_ID
+mkdir -p out/${job_id}/slurm
+# Run Snakemake with SLURM integration, using the slurm-jobscript.sh for each rule submission
+snakemake -j 256 --config job_id=${job_id} \
+  --cluster "sbatch --mem={resources.mem_mb}M --cpus-per-task={resources.cpus} \
+    --time=12:00:00 \
+    --output=out/${job_id}/slurm/{rule}-%j.out \
+    --error=out/${job_id}/slurm/{rule}-%j.err" \
+  --latency-wait 60 --printshellcmds --use-conda
+```
+
+### Parameters
+
+he key parameters used in the pipeline are:
+	- K: K-mer size
+	- THRES: Entropy threshold for filtering
+	- N_BATCH: Number of batches to divide the gene data into for parallel processing
+	- GENE_PATH: Path to the reference gene file
+	- READ_PATH: Path to the RNA-seq reads
+	- MEM: Memory allocated for each step of the pipeline
+	- OUT_DIR: Output directory where results will be saved
+
+### Step-by-Step Execution
+
+Snakemake automatically orchestrates the steps in the pipeline. The key steps include:
+	- Step 1: Generate K-mer table (cloud)
+	- Step 2: HE key generation (local)
+	- Step 3: Encode and encrypt data (local)
+	- Step 4: Compute matching batch (cloud)
+	- Step 5: Decrypt and return gene expression vector (local)
+
+Each step is configured with resource constraints (memory, CPUs) and logs outputs to the specified OUT_DIR.
 
 ### Results
 
-The results are stored in `<OUT_DIR>` folder. The slurm script creates a folder of name `<SLURM_JOB_ID>` and three other folders `bfv`, `kmer`, and `slurm_out`
- - `<OUT_DIR>/<SLURM_JOB_ID>/bfv`: all bfv-related stuffs are stored, including context, HE keys, and ciphertexts
- - `<OUT_DIR>/<SLURM_JOB_ID>/kmer`: all results from pQuant algorithm are stored. In our implementation, kmer table and the index of kmer are stored.
- - `<OUT_DIR>/<SLURM_JOB_ID>/slurm_out`: all logs are stored. 
+The output will be saved in the <OUT_DIR> folder, organized by job ID and step:
+	- `<OUT_DIR>/<JOB_ID>/bfv`: Stores all BFV-related files, including HE keys and ciphertexts.
+	- `<OUT_DIR>/<JOB_ID>/kmer`: Stores K-mer tables and indices generated by pQuant.
+	- `<OUT_DIR>/<JOB_ID>/logs`: Contains logs for each step of the Snakemake execution.
+A summary of the runtime for each step will also be saved in the `time_summary.csv` file in the output directory.
 
+This README structure reflects the new Snakemake-based workflow, simplifying job submission and resource management compared to the previous Slurm-based approach.
 
 
 ### Analysis pipeline
