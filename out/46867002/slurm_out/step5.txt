@@ -1,54 +1,0 @@
- == file paths ==
-data name = five
-filename_read = ../dataset/five_genes/five_gene_reads.fa
-filename_ref = ../dataset/five_genes/five_gene_reference.fa
-filename_kmerTable = ../out/46867002/kmer/kmertable_five.bin
-filename_kmerList = ../out/46867002/kmer/kmerlist_five.bin
-foldername_BFV = ../out/46867002/bfv
-foldername_ctxtread = ../out/46867002/bfv/ctxtread
-foldername_ctxtout = ../out/46867002/bfv/ctxtout
-
- == default parameters ==
-k = 10
-thres = 1e-05
-target = STEP5
-
- == conditional parameters ==
-debug_n_gene = -1
-gene_start = 0
-gene_end = 5
-batch_num = -1
-batch_num_total = -1
-
- == flags ==
-verbose = 0
-json_format = 1
-print_progress_bar = 1
-operate_then_serialize = 0
-=== Deserialize ===
-The cryptocontext has been deserialized from ../out/46867002/bfv/context.txt
-The secret key has been deserialized from ../out/46867002/bfv/key-private.txt
-Deserialize duration = 23 ms
-
-=== read ctxt_out ===
-
- read ctxtOut : [==============>                                                       ]  (1/5)  20% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00616455 GB
- decryptOutput : [==============>                                                       ]  (1/5)  20% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00677109 GB read ctxtOut : [============================>                                         ]  (2/5)  40% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00677109 GB decryptOutput : [============================>                                         ]  (2/5)  40% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB read ctxtOut : [==========================================>                           ]  (3/5)  60% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB decryptOutput : [==========================================>                           ]  (3/5)  60% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB read ctxtOut : [========================================================>             ]  (4/5)  80% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB decryptOutput : [========================================================>             ]  (4/5)  80% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB read ctxtOut : [======================================================================]  (5/5) 100% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB
- decryptOutput : [======================================================================]  (5/5) 100% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.00704956 GB
-serialAndDec duration = 96 ms
-
-=== read kmerTable ===
-load kmerTable duration = 149 ms
-
- === print gene vector === 
-ENSG00000131174 : 1362524
-ENSG00000119707 : 1958685
-ENSG00000105971 : 85429
-ENSG00000085982 : 398253
-ENSG00000089289 : 951759
-
- === Duration summaries ===
-load kmerTable duration = 149 ms
-serialAndDec duration = 96 ms
-total duration = 245 ms
-Memory usage = 25 MB (pick = 60 MB)

@@ -1,10 +1,12 @@
-K: 15
-THRES: 0.0001
+K: 20
+THRES: 1e-9
 N_BATCH: 3
 exe: "build/pquant"
-OUT_DIR: "out"
+OUT_DIR: "out_sim_read_241007"
 GENE_PATH: "dataset/five_genes/five_gene_reference.fa"
 READ_PATH: "dataset/five_genes/five_gene_reads.fa"
+# option for using simulated reads
+sr: false
 
 slurm:
   step1:

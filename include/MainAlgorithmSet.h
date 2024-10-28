@@ -31,6 +31,13 @@ public:
      - encode & encrypt read
     */
     static void encodeAndEncrypt(PQuantParams &param);
+
+    /* 
+    step 3: simulate reads
+     - generate simulated reads
+     - encode & encrypt read
+    */
+    static void encodeAndEncryptSimulatedReads(PQuantParams &param);
     
     /*
     step 4

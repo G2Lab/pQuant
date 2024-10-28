@@ -1,67 +1,0 @@
- == file paths ==
-data name = five
-filename_read = ../dataset/five_genes/five_gene_reads.fa
-filename_ref = ../dataset/five_genes/five_gene_reference.fa
-filename_kmerTable = ../out/46867002/kmer/kmertable_five.bin
-filename_kmerList = ../out/46867002/kmer/kmerlist_five.bin
-foldername_BFV = ../out/46867002/bfv
-foldername_ctxtread = ../out/46867002/bfv/ctxtread
-foldername_ctxtout = ../out/46867002/bfv/ctxtout
-
- == default parameters ==
-k = 10
-thres = 1e-05
-target = STEP4
-
- == conditional parameters ==
-debug_n_gene = -1
-gene_start = -1
-gene_end = -1
-batch_num = 1
-batch_num_total = 3
-
- == flags ==
-verbose = 0
-json_format = 1
-print_progress_bar = 1
-operate_then_serialize = 0
-=== Deserialize ===
-The cryptocontext has been deserialized from ../out/46867002/bfv/context.txt
-The eval mult keys have been deserialized from ../out/46867002/bfv/key-eval-mult.txt
-Deserialize duration = 46 ms
-
-=== read kmerTable ===
-load kmerTable duration = 160 ms
-
-Run genes from 2 to 3
-=== load kmerList ===
-load kmerList duration = 45 ms
-
-check parameters
-n_slots = 8192
-n_genes = 2
-n_vec_per_gene = 9
-n_kmer_total = 65748
-
-=== read ctxtRead ===
-
- read ctxtRead : [=======>                                                              ]  (1/9)  11% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0261383 GB read ctxtRead : [===============>                                                      ]  (2/9)  22% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0261383 GB read ctxtRead : [=======================>                                              ]  (3/9)  33% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0261383 GB read ctxtRead : [===============================>                                      ]  (4/9)  44% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0261383 GB read ctxtRead : [======================================>                               ]  (5/9)  55% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0262527 GB read ctxtRead : [==============================================>                       ]  (6/9)  66% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0265045 GB read ctxtRead : [======================================================>               ]  (7/9)  77% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0267563 GB read ctxtRead : [==============================================================>       ]  (8/9)  88% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0270081 GB read ctxtRead : [======================================================================]  (9/9) 100% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0272598 GB
-read ctxtRead duration = 169 ms
-
-=== encode kmerTable and mult ===
- multCtxtByEncodedRef : [======================================================================]  (19/18) 105% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0290184 GB multCtxtByEncodedRef : [======================================================================]  (20/18) 111% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (21/18) 116% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (22/18) 122% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (23/18) 127% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (24/18) 133% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (25/18) 138% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (26/18) 144% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (27/18) 150% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (28/18) 155% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0292702 GB multCtxtByEncodedRef : [======================================================================]  (29/18) 161% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (30/18) 166% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (31/18) 172% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (32/18) 177% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (33/18) 183% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (34/18) 188% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (35/18) 194% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GB multCtxtByEncodedRef : [======================================================================]  (36/18) 200% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0295219 GBmultCtxtByEncodedRef duration = 95 ms
-
-=== serialize ct_out ===
- serializeCtxtOut : [======================================================================]  (3/2) 150% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0297737 GB serializeCtxtOut : [======================================================================]  (4/2) 200% | Elapsed Time: 00:00:00s | ETA: 00:00:00s Memory : 0.0297737 GBserializeCtxtOut duration = 14 ms
-
- === Duration summaries ===
-load kmerTable duration = 160 ms
-load kmerList duration = 45 ms
-read ctxtRead duration = 169 ms
-encode_and_mult duration = 95 ms
-serializeCtxtOut duration = 14 ms
-total duration = 483 ms
-single ctxt size
-filesize of ../out/46867002/bfv/ctxtout/ct_2.txt = 257.058 KB
-512	../out/46867002/bfv/ctxtout
-Memory usage = 30 MB (pick = 189 MB)

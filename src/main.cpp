@@ -37,10 +37,11 @@ int main(int argc, char **argv) {
         ("bt,batch_num_total", "total number of batches", cxxopts::value<int>()->default_value("-1"))
         ("bn, batch_num", "current batch number", cxxopts::value<int>()->default_value("-1"))
         ("ots,operate_then_serialize", "finish encrypt/decrypt and then serialize outputs", cxxopts::value<bool>()->default_value("true"))
+        ("sr,use_sim_read", "use simulated reads", cxxopts::value<bool>()->default_value("false"))
         ("sim_num", "number of simulated reads", cxxopts::value<int>()->default_value("100"))
         ("sim_len", "length of simulated reads", cxxopts::value<int>()->default_value("100"))
         ("sim_out", "output file for simulated reads", cxxopts::value<std::string>()->default_value(""))
-        ("h,help", "Print usage")
+        ("help", "Print help")
     ;
 
 
@@ -70,6 +71,8 @@ int main(int argc, char **argv) {
         MainAlgorithmSet::keyGenBFVandSerialize(param);
     } else if (param.target.compare("STEP3") == 0) {
         MainAlgorithmSet::encodeAndEncrypt(param);
+    } else if (param.target.compare("STEP3-sim") == 0) {
+        MainAlgorithmSet::encodeAndEncryptSimulatedReads(param);
     } else if (param.target.compare("STEP4") == 0) {
         MainAlgorithmSet::computeInnerProductBatch(param);
     } else if (param.target.compare("STEP5") == 0) {
