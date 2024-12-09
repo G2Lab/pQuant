@@ -44,5 +44,5 @@ void decCtxtOut(Plaintext_1d &pt_out, Ciphertext_1d &ct_out, CryptoContext<DCRTP
 void sumUpCtxt(Ciphertext<DCRTPoly> &ct, Ciphertext_1d &ct_vec, CryptoContext<DCRTPoly> &cc);
 void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, CryptoContext<DCRTPoly> &cc, string path_output);
 
-void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t num_reads, vector<Sequence>& simulated_reads);
+void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t num_reads, float sim_err, vector<Sequence>& simulated_reads);
 #endif

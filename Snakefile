@@ -13,12 +13,14 @@ rule all:
         f"{OUT_DIR}/tmp/.run_all_complete"
     output:
         f"{OUT_DIR}/time_summary.csv"
+        f"{OUT_DIR}/data_summary/post_statistics.txt"
     resources:
         mem_mb=100,
         cpus=1
     shell:
         """
-        python summary/summary.py {job_id}
+        ./build/pquant -t tpm {GLOBAL_ARGS} > {OUT_DIR}/data_summary/post_statistics.txt
+        python summary/summary.py {OUT_DIR}
         """
 
 rule step1_generate_kmerTable_cloud:
@@ -37,9 +39,25 @@ rule step1_generate_kmerTable_cloud:
         touch {output}
         """
 
+
+rule data_statistics:
+    input:
+        f"{OUT_DIR}/tmp/step1_done"
+    output:
+        f"{OUT_DIR}/data_summary/data_statistics.txt"
+    resources:
+        mem_mb=100,
+        cpus=1
+    shell:
+        """
+        mkdir -p {OUT_DIR}/data_summary
+        ./build/pquant -t analysis {GLOBAL_ARGS} > {OUT_DIR}/data_summary/data_statistics.txt
+        """
+
 rule step2_he_keygen_local:
     input:
-        rules.step1_generate_kmerTable_cloud.output
+        rules.step1_generate_kmerTable_cloud.output,
+        rules.data_statistics.output
     output:
         f"{OUT_DIR}/tmp/step2_done"
     params:
@@ -132,7 +150,7 @@ rule init:
         sim_num =lambda wildcards: f"sim_num: {config['sim_num']}" if config.get('sr') else "",
         sim_len =lambda wildcards: f"sim_len: {config['sim_len']}" if config.get('sr') else ""
     resources:
-        mem_gb=1,  # Memory in GB
+        mem_mb=100,  # Memory in GB
         cpus=1     # Number of CPUs
     shell:
         """

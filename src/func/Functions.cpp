@@ -387,7 +387,7 @@ void sumUpCtxtFromSerial(Ciphertext_1d &ct_out, size_t n_gene, size_t n_ctxt, Cr
     }
 }
 
-void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t num_reads, vector<Sequence>& simulated_reads) {
+void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t num_reads, float sim_err, vector<Sequence>& simulated_reads) {
     // given gene sequences, generate simulated reads
     // read_len: length of read
     // num_reads: number of reads
@@ -439,6 +439,9 @@ void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t 
         simulated_reads.push_back(new_seq);
     }
 
+    // seed random number generator
+    srand(time(NULL));
+
     for (size_t i = 0; i < num_reads; i++) {
         // choose gene based on gene_prob
         float r = (float)rand() / (float)RAND_MAX;
@@ -459,6 +462,20 @@ void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t 
 
         // generate read
         string read = gene_concatenated[gene_index].substr(start_pos, read_len);
+
+        // add randomness
+        for (size_t j = 0; j < read_len; j++) {
+            float read_r = (float)rand() / (float)RAND_MAX;
+            if (read_r < sim_err) {
+                // change base to different base
+                char base = read[j];
+                    cout << "base = " << base << endl;
+                while (base == read[j]) {
+                    read[j] = "ACGT"[rand() % 4];
+                }
+                cout << "changed to = " << read[j] << endl;
+            }
+        }
 
         // check gene_name and add read to simulated_reads
         string gene_name = gene_seq[gene_index].geneName;

@@ -524,7 +524,7 @@ void Task::testSimulatedReadEncoding(PQuantParams &param) {
     cout << "=== simulate read ===" << endl;
     vector<Sequence> reads_seq;
 
-    generateSimulatedReads(seq_vec, param.sim_len, param.sim_num, reads_seq);
+    generateSimulatedReads(seq_vec, param.sim_len, param.sim_num, param.sim_err, reads_seq);
     auto end_time_simulateRead = std::chrono::high_resolution_clock::now();
     auto duration_simulateRead = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_simulateRead - start_time_simulateRead).count();
     std::cout << "simulateRead duration = " << duration_simulateRead << " ms" << std::endl;
@@ -532,14 +532,14 @@ void Task::testSimulatedReadEncoding(PQuantParams &param) {
 
     // // print simulatedRead to check
     // cout << "=== print simulated read ===" << endl;
-    // for (auto &read_seq : reads_seq) {
-    //     if (read_seq.getNumSeq() > 0) {
-    //         cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
-    //         for (size_t i = 0; i < static_cast<size_t>(read_seq.getNumSeq()); i++) {
-    //             cout << "   " << read_seq.getSeq(i) << endl;
-    //         }
-    //     }
-    // }
+    for (auto &read_seq : reads_seq) {
+        if (read_seq.getNumSeq() > 0) {
+            cout << "Gene name: " << read_seq.getGeneName() << ", Num seq: " << read_seq.getNumSeq() << endl;
+            for (size_t i = 0; i < static_cast<size_t>(read_seq.getNumSeq()); i++) {
+                cout << "   " << read_seq.getSeq(i) << endl;
+            }
+        }
+    }
     
     std::string filename_context = param.foldername_BFV + "/context.txt";
     std::string filename_private = param.foldername_BFV + "/key-private.txt";

@@ -119,9 +119,9 @@ Here is the example of the `submit_snakemake.sh` script:
 job_id=$SLURM_JOB_ID
 mkdir -p out/${job_id}/slurm
 # Run Snakemake with SLURM integration, using the slurm-jobscript.sh for each rule submission
-snakemake -j 256 --config job_id=${job_id} \
-  --cluster "sbatch --mem={resources.mem_mb}M --cpus-per-task={resources.cpus} \
-    --time=12:00:00 \
+snakemake -j 256 --config job_id=${job_id} OUT_DIR=${OUT_DIR} \
+  --cluster "sbatch --mem={resources.mem_mb}M --cpus-per-task={resources.cpus} --job-name={rule} \
+    --time=48:00:00 \
     --output=out/${job_id}/slurm/{rule}-%j.out \
     --error=out/${job_id}/slurm/{rule}-%j.err" \
   --latency-wait 60 --printshellcmds --use-conda
@@ -162,3 +162,45 @@ This README structure reflects the new Snakemake-based workflow, simplifying job
 
 ### Analysis pipeline
 A Snakemake pipeline used to produce our results is included in the "workflow/" subdirectory. This directory also contains scripts for reference creation and read concatenation for pQuant.
+
+## Summary Statictics
+
+To address user requests and improve the usability of pQuant, we have introduced additional functionalities that generate summary statistics at key stages of the pipeline. These enhancements provide insights into input data quality and final output, ensuring data reliability and usability while maintaining privacy guarantees.
+
+### Pre-encoding Statistics
+
+Before the encoding stage, pQuant generates a set of summary statistics from the input RNA-seq reads:
+- Total number of k-mers: The number of k-mers identified in the input dataset.
+- Total number of reads: The count of all reads in the dataset.
+- Number of reads meeting the quality threshold: Using the seqtk library, this functionality filters reads based on a user-defined quality threshold.
+
+These statistics allow users to verify input data quality and assess its suitability for downstream processing.
+
+This part is commanded in snakemake `data_statistics` rule.
+For instance, the output from toy dataset is as following.
+```text
+    ...
+    Total number of kmers: 98140
+    Total number of reads: 5
+    Number of reads in out.fa with quality > 20: 0
+```
+
+### Post-decryption Statistics
+
+After the decryption stage, pQuant provides metrics on the gene expression results:
+- Number of genes with TPM values above a user-defined threshold: Users can define a TPM (Transcripts Per Million) threshold, and this functionality calculates the number of genes meeting this criterion.
+
+These metrics enable users to evaluate the completeness and reliability of the quantification results.
+
+This part is automatically computed 
+For instance, the output from toy dataset is as following.
+```text
+    ...    
+    Gene: ENSG00000131174, TPM: 382830
+    Gene: ENSG00000119707, TPM: 129092
+    Gene: ENSG00000105971, TPM: 9478.97
+    Gene: ENSG00000089289, TPM: 446375
+    Gene: ENSG00000085982, TPM: 32224.1
+    Number of genes with TPM > 1: 5
+
+```

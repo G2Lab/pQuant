@@ -419,6 +419,7 @@ void MainAlgorithmSet::encodeAndEncryptSimulatedReads(PQuantParams &param) {
     cout << "params" << endl;
     cout << "sim_num = " << param.sim_num << endl;
     cout << "sim_len = " << param.sim_len << endl;
+    cout << "sim_err = " << param.sim_err << endl;
     cout << "use reference from " << param.filename_ref << endl;
     
     vector<Sequence> seq_vec;
@@ -427,7 +428,7 @@ void MainAlgorithmSet::encodeAndEncryptSimulatedReads(PQuantParams &param) {
     vector<Sequence> reads_seq;
     cout << "=== generate simulated reads ===" << endl;
     auto start_time_simulateRead = std::chrono::high_resolution_clock::now();
-    generateSimulatedReads(seq_vec, param.sim_len, param.sim_num, reads_seq);
+    generateSimulatedReads(seq_vec, param.sim_len, param.sim_num, param.sim_err, reads_seq);
     auto end_time_simulateRead = std::chrono::high_resolution_clock::now();
     auto duration_simulateRead = std::chrono::duration_cast<std::chrono::milliseconds>(end_time_simulateRead - start_time_simulateRead).count();
     std::cout << "simulateRead duration = " << duration_simulateRead << " ms" << std::endl;
@@ -936,7 +937,20 @@ void MainAlgorithmSet::decryptAndReturnGeneVector(PQuantParams &param) {
         cout << kmerTableRef.geneNameIndex[i] << " : " << final[i] << endl;
     }
     cout << endl;
-    
+
+    // save gene vector to file
+    std::string filename_geneVector = param.foldername_kmer + "/geneVector.txt";
+    std::ofstream geneVectorFile(filename_geneVector);
+    if (!geneVectorFile.is_open()) {
+        std::cerr << "Could not open file " << filename_geneVector << std::endl;
+        return;
+    }
+
+    for (size_t i = 0; i < final.size(); i++) {
+        geneVectorFile << kmerTableRef.geneNameIndex[i] << " " << final[i] << std::endl;
+    }
+    geneVectorFile.close();
+
     auto total_duration = duration_kmerTable + duration_dec;
     std::cout << " === Duration summaries ===" << endl;
     std::cout << "load kmerTable duration = " << duration_kmerTable << " ms" << endl;

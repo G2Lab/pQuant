@@ -3,6 +3,7 @@
 #include "openfhe.h"
 #include "Task.h"
 #include "MainAlgorithmSet.h"
+#include "data-analysis.h"
 #include "func/PQuantParams.h"
 #include <algorithm>
 #include <cstdlib>
@@ -40,11 +41,13 @@ int main(int argc, char **argv) {
         ("sr,use_sim_read", "use simulated reads", cxxopts::value<bool>()->default_value("false"))
         ("sim_num", "number of simulated reads", cxxopts::value<int>()->default_value("100"))
         ("sim_len", "length of simulated reads", cxxopts::value<int>()->default_value("100"))
+        ("sim_err", "error rate of simulated reads", cxxopts::value<float>()->default_value("0.01"))
         ("sim_out", "output file for simulated reads", cxxopts::value<std::string>()->default_value(""))
+        ("q,quality", "quality threshold for filtering reads", cxxopts::value<int>()->default_value("20"))
         ("help", "Print help")
     ;
 
-
+    cout << "checkpoint" << endl;
     auto result = options.parse(argc, argv);
 
     if (result.count("help"))
@@ -54,36 +57,31 @@ int main(int argc, char **argv) {
     }
 
     PQuantParams param(result);
-
-    // test algorithms
-    if (param.target.compare("bench") == 0) {
-        Task::bfvBenchmark(param);
-        return 0;
-    }
-    
+    cout << "checkpoint" << endl;
     
     // main algorithms
     param.print();
 
-    if (param.target.compare("STEP1") == 0) {
-        MainAlgorithmSet::generateKmerTableFromReference(param);
-    } else if (param.target.compare("STEP2") == 0) {
-        MainAlgorithmSet::keyGenBFVandSerialize(param);
-    } else if (param.target.compare("STEP3") == 0) {
-        MainAlgorithmSet::encodeAndEncrypt(param);
-    } else if (param.target.compare("STEP3-sim") == 0) {
-        MainAlgorithmSet::encodeAndEncryptSimulatedReads(param);
-    } else if (param.target.compare("STEP4") == 0) {
-        MainAlgorithmSet::computeInnerProductBatch(param);
-    } else if (param.target.compare("STEP5") == 0) {
-        MainAlgorithmSet::decryptAndReturnGeneVector(param);
-    } else if (param.target.compare("argument") == 0) {
-    } else if (param.target.compare("fasta") == 0) {
-        Task::readFastaFiles(param);
-    } else if (param.target.compare("table") == 0) {
-        Task::testKmerTable(param);
-    } else if (param.target.compare("all") == 0) {
-        Task::run_all(param);
+    cout << "checkpoint" << endl;
+    std::map<std::string, std::function<void(PQuantParams&)>> algorithmMap = {
+        {"STEP1", MainAlgorithmSet::generateKmerTableFromReference},
+        {"STEP2", MainAlgorithmSet::keyGenBFVandSerialize},
+        {"STEP3", MainAlgorithmSet::encodeAndEncrypt},
+        {"STEP3-sim", MainAlgorithmSet::encodeAndEncryptSimulatedReads},
+        {"STEP4", MainAlgorithmSet::computeInnerProductBatch},
+        {"STEP5", MainAlgorithmSet::decryptAndReturnGeneVector},
+        {"fasta", Task::readFastaFiles},
+        {"table", Task::testKmerTable},
+        {"all", Task::run_all},
+        {"sim", Task::testSimulatedReadEncoding},
+        {"analysis", analyze_dataset},
+        {"tpm", compute_tpm},
+        {"bench", Task::bfvBenchmark}
+    };
+
+    auto it = algorithmMap.find(param.target);
+    if (it != algorithmMap.end()) {
+        it->second(param);
     } else if (param.target.compare("main") == 0) {
         cout << " ========================================== " << endl;
         cout << " ================= STEP 1 ================= " << endl;
@@ -114,14 +112,7 @@ int main(int argc, char **argv) {
         cout << " ========================================== " << endl;
         cout << endl;
         MainAlgorithmSet::decryptAndReturnGeneVector(param);
-    } else if (param.target.compare("sim") == 0) {
-        cout << " ========================================== " << endl;
-        cout << " ============ Simulate Reads ============== " << endl;
-        cout << " ========================================== " << endl;
-        cout << endl;
-        Task::testSimulatedReadEncoding(param);
-    }
-    else {
+    } else {
         std::cout << "Invalid target algorithm" << std::endl;
         exit(0);
     }

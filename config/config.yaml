@@ -2,11 +2,16 @@ K: 20
 THRES: 1e-9
 N_BATCH: 500
 exe: "build/pquant"
-OUT_DIR: "out_sim_read_241007"
-GENE_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/gencode.v44.basic.annotation.subset.exons.fa"
-READ_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/encode/original/ENCLB059ZZZ/ENCLB059ZZZ.concat.fastq"
+OUT_DIR: "out/end_to_end-241124"
+# GENE_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/gencode.v44.basic.annotation.subset.exons.fa"
+# READ_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/encode/original/ENCLB059ZZZ/ENCLB059ZZZ.concat.fastq"
+
+GENE_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/reference/pquant/gencode.v44.basic.annotation.subset_60000.exons.fa"
+# READ_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/encode/subsample/ENCLB059ZZZ.concat/ENCLB059ZZZ.concat.n_10000000.fastq"
+READ_PATH: "/gpfs/commons/groups/gursoy_lab/cwalker/projects/pquant/workflow/data/encode/subsample/ENCLB059ZZZ.concat/ENCLB059ZZZ.concat.n_30000000.fastq"
+
 # option for using simulated reads
-sr: true
+sr: false
 
 slurm:
   step1:
@@ -19,7 +24,7 @@ slurm:
     mem: "200G"
     cpus: 8
   step4:
-    mem: "200G"
+    mem: "120G"
     cpus: 8
   step5:
     mem: "200G"

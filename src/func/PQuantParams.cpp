@@ -63,8 +63,10 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
         foldername_ctxtout = foldername_BFV + "/ctxtout";
     }
 
-    sim_num = result["sim_num"].as<int>();
-    sim_len = result["sim_len"].as<int>();
+    this->sim_num = result["sim_num"].as<int>();
+    this->sim_len = result["sim_len"].as<int>();
+    this->sim_err = result["sim_err"].as<float>();
+    this->quality = result["quality"].as<int>();
 }
 
 void PQuantParams::print() {
