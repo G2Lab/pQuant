@@ -1,11 +1,14 @@
-# Use an appropriate base image with Snakemake, gcc, and other tools
+# Use Ubuntu 20.04 as the base image
 FROM ubuntu:20.04
 
-# Set environment variables
+# Set non-interactive frontend
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Install dependencies
-RUN apt-get update && apt-get install -y \
+# Install dependencies and add the PPA for GCC-11
+RUN apt-get update && apt-get install -y software-properties-common \
+    && add-apt-repository ppa:ubuntu-toolchain-r/test \
+    && apt-get update \
+    && apt-get install -y \
     build-essential \
     cmake \
     gcc-11 \
