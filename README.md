@@ -169,6 +169,8 @@ To address user requests and improve the usability of pQuant, we have introduced
 
 ### Pre-encoding Statistics
 
+`Note`: seqtk/1.2 must be available and loaded in your environment to enable this feature.
+
 Before the encoding stage, pQuant generates a set of summary statistics from the input RNA-seq reads:
 - Total number of k-mers: The number of k-mers identified in the input dataset.
 - Total number of reads: The count of all reads in the dataset.
@@ -176,24 +178,52 @@ Before the encoding stage, pQuant generates a set of summary statistics from the
 
 These statistics allow users to verify input data quality and assess its suitability for downstream processing.
 
-This part is commanded in snakemake `data_statistics` rule.
-For instance, the output from toy dataset is as following.
+This part is commanded in snakemake `pre_analysis` rule. To run with snakemake and toy dataset, please follow following:
+```bash
+    # Ensure seqtk/1.2 is loaded in your environment
+    module load seqtk/1.2
+
+    # Run the pQuant algorithm. The following command runs the end-to-end process on the test dataset,
+    # but for pre-analysis, you only need to execute step 1.
+    snakemake -j 8 --configfile config/config_toy.yaml
+
+    # The job_id is automatically set in the format YYMMDD-HHMMSS, as specified in the config_toy.yaml file.
+    # Check your output directory for the generated job_id before running the following command with your <JOB_ID>.
+    # You can manage the quality control threshold using the <qc> parameter.
+
+    snakemake -j 8 --configfile config/config_toy.yaml --config job_id=<JOB_ID> QC=<qc> --printshellcmds --rerun-incomplete pre_analysis
+```
+For instance, the output from toy dataset is as following in `data_summary/pre_analysis.txt'.
 ```text
-    ...
+    ...    
+    === read reads ===
+    read file is .fa format
+    readFastaFile duration = 58 ms
     Total number of kmers: 98140
     Total number of reads: 5
-    Number of reads in out.fa with quality > 20: 0
+    Number of reads in out.fa with quality > 5: 80453
+
 ```
 
 ### Post-decryption Statistics
 
 After the decryption stage, pQuant provides metrics on the gene expression results:
-- Number of genes with TPM values above a user-defined threshold: Users can define a TPM (Transcripts Per Million) threshold, and this functionality calculates the number of genes meeting this criterion.
+- Number of genes with TPM values above a user-defined threshold: Users can specify a TPM (Transcripts Per Million) threshold, and the functionality calculates the number of genes meeting this criterion.
 
-These metrics enable users to evaluate the completeness and reliability of the quantification results.
+These metrics allow users to evaluate the completeness and reliability of the quantification results.
 
-This part is automatically computed 
-For instance, the output from toy dataset is as following.
+This step is implemented in the post_analysis rule of the Snakemake pipeline. To execute it, follow the steps below:
+```bash
+    # Run the pQuant algorithm.
+    snakemake -j 8 --configfile config/config_toy.yaml
+
+    # The job_id is automatically set in the format YYMMDD-HHMMSS, as specified in the config_toy.yaml file.
+    # Check your output directory for the generated job_id before running the following command with your <JOB_ID>.
+    # You can manage the TPM threshold parameter using the <thres> variable.
+
+    snakemake -j 8 --configfile config/config_toy.yaml --config job_id=<JOB_ID> TPM_THRES=<thres> --printshellcmds --rerun-incomplete post_analysis
+```
+For instance, the output from toy dataset is as following in `data_summary/post_analysis.txt'.
 ```text
     ...    
     Gene: ENSG00000131174, TPM: 382830
@@ -201,6 +231,5 @@ For instance, the output from toy dataset is as following.
     Gene: ENSG00000105971, TPM: 9478.97
     Gene: ENSG00000089289, TPM: 446375
     Gene: ENSG00000085982, TPM: 32224.1
-    Number of genes with TPM > 1: 5
-
+    Number of genes with TPM > 0.5: 5
 ```

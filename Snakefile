@@ -8,18 +8,19 @@ job_id = config.get("job_id", datetime.now().strftime("%y%m%d-%H%M%S"))  # Use p
 OUT_DIR=f"{config['OUT_DIR']}/{job_id}"
 GLOBAL_ARGS = f"-k {config['K']} --thres {config['THRES']} --kmer_folder {OUT_DIR}/kmer --bfv_folder {OUT_DIR}/bfv -g {config['GENE_PATH']} -r {config['READ_PATH']} -b"
 
+# option for quality control
+qc: 20
+
 rule all:
     input:
         f"{OUT_DIR}/tmp/.run_all_complete"
     output:
         f"{OUT_DIR}/time_summary.csv"
-        f"{OUT_DIR}/data_summary/post_statistics.txt"
     resources:
         mem_mb=100,
         cpus=1
     shell:
         """
-        ./build/pquant -t tpm {GLOBAL_ARGS} > {OUT_DIR}/data_summary/post_statistics.txt
         python summary/summary.py {OUT_DIR}
         """
 
@@ -39,25 +40,9 @@ rule step1_generate_kmerTable_cloud:
         touch {output}
         """
 
-
-rule data_statistics:
-    input:
-        f"{OUT_DIR}/tmp/step1_done"
-    output:
-        f"{OUT_DIR}/data_summary/data_statistics.txt"
-    resources:
-        mem_mb=100,
-        cpus=1
-    shell:
-        """
-        mkdir -p {OUT_DIR}/data_summary
-        ./build/pquant -t analysis {GLOBAL_ARGS} > {OUT_DIR}/data_summary/data_statistics.txt
-        """
-
 rule step2_he_keygen_local:
     input:
         rules.step1_generate_kmerTable_cloud.output,
-        rules.data_statistics.output
     output:
         f"{OUT_DIR}/tmp/step2_done"
     params:
@@ -167,3 +152,39 @@ rule init:
         echo "{params.sim_len}" >> {output[1]}
         echo " ================== " >> {output[1]}
         """
+
+rule pre_analysis:
+    input:
+        f"{OUT_DIR}/tmp/.job_id_initialized"
+    output:
+        f"{OUT_DIR}/tmp/.pre-analysis_done"
+    resources:
+        mem_mb=100,
+        cpus=1,
+    params:
+        quality=config['QC']
+    shell:
+        """
+        mkdir -p {OUT_DIR}/data_summary
+        ./build/pquant -t analysis {GLOBAL_ARGS} -q {params.quality} > {OUT_DIR}/data_summary/pre_analysis.txt
+        touch {output}
+        """
+
+rule post_analysis:
+    input:
+        rules.step1_generate_kmerTable_cloud.output
+    output:
+        f"{OUT_DIR}/tmp/.post-analysis_done"
+    resources:
+        mem_mb=100,
+        cpus=1
+    params:
+        thres=config['TPM_THRES']
+    shell:
+        """
+        mkdir -p {OUT_DIR}/data_summary
+        ./build/pquant -t tpm {GLOBAL_ARGS} --tpm_thres {params.thres} > {OUT_DIR}/data_summary/post_analysis.txt
+        touch {output}
+        """
+
+        

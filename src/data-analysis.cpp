@@ -144,7 +144,7 @@ void compute_tpm(PQuantParams param) {
         std::cout << "Gene: " << gene.first << ", TPM: " << gene.second << std::endl;
     }
 
-    double thres = 1.0;
+    double thres = param.tpm_thres;
 
     // count # of genes with TPM > thres
     size_t count = 0;

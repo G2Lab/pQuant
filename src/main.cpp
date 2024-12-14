@@ -44,10 +44,10 @@ int main(int argc, char **argv) {
         ("sim_err", "error rate of simulated reads", cxxopts::value<float>()->default_value("0.01"))
         ("sim_out", "output file for simulated reads", cxxopts::value<std::string>()->default_value(""))
         ("q,quality", "quality threshold for filtering reads", cxxopts::value<int>()->default_value("20"))
+        ("tpm_thres", "TPM threshold for filtering genes", cxxopts::value<float>()->default_value("1.0"))
+        ("tpm_out", "output file for TPM", cxxopts::value<std::string>()->default_value(""))
         ("help", "Print help")
     ;
-
-    cout << "checkpoint" << endl;
     auto result = options.parse(argc, argv);
 
     if (result.count("help"))
@@ -57,12 +57,9 @@ int main(int argc, char **argv) {
     }
 
     PQuantParams param(result);
-    cout << "checkpoint" << endl;
     
     // main algorithms
     param.print();
-
-    cout << "checkpoint" << endl;
     std::map<std::string, std::function<void(PQuantParams&)>> algorithmMap = {
         {"STEP1", MainAlgorithmSet::generateKmerTableFromReference},
         {"STEP2", MainAlgorithmSet::keyGenBFVandSerialize},

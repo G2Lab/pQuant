@@ -43,8 +43,9 @@ class PQuantParams {
     int sim_len;
     float sim_err;
 
-    // quality threshold for filtering reads
+    // pre and post data analysis
     int quality;
+    float tpm_thres;
 
     PQuantParams(cxxopts::ParseResult &result);
 

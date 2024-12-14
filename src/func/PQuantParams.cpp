@@ -67,6 +67,7 @@ PQuantParams::PQuantParams(cxxopts::ParseResult &result) {
     this->sim_len = result["sim_len"].as<int>();
     this->sim_err = result["sim_err"].as<float>();
     this->quality = result["quality"].as<int>();
+    this->tpm_thres = result["tpm_thres"].as<float>();
 }
 
 void PQuantParams::print() {
