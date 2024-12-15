@@ -58,6 +58,25 @@ The compilation takes less than 1 minutes in our system. Upon successful compila
 ```
 This command will test the BFV schemes from the OpenFHE library and output runtime results for encode, encrypt, decrypt, add, and multiply operations.
 
+### Install with Docker
+
+You can use Docker to simplify the setup and run pQuant without manually installing dependencies. Follow these steps:
+
+1. Install docker: install docker for your operating system.
+2.Build the Docker Image
+
+The Dockerfile is located in the Docker/ directory. Use the following command to build the Docker image:
+```bash
+    docker build -t pquant:latest -f Docker/Dockerfile .
+```
+3. Run pQuant Using Docker
+
+After building the image, you can run pQuant inside a Docker container.
+Start the container interactively to test the pQuant commands:
+```bash
+    docker run -it pquant:latest /bin/bash
+```
+
 ## Running pQuant using Snakemake
 
 In current version, pQuant is executed via Snakemake, which allows for management of computational resources and task dependencies.
@@ -163,9 +182,9 @@ This README structure reflects the new Snakemake-based workflow, simplifying job
 ### Analysis pipeline
 A Snakemake pipeline used to produce our results is included in the "workflow/" subdirectory. This directory also contains scripts for reference creation and read concatenation for pQuant.
 
-## Summary Statictics
+## Summary Statistics
 
-To address user requests and improve the usability of pQuant, we have introduced additional functionalities that generate summary statistics at key stages of the pipeline. These enhancements provide insights into input data quality and final output, ensuring data reliability and usability while maintaining privacy guarantees.
+To address user requests and improve the usability of pQuant, we have introduced additional functionalities that generate summary statistics at key stages of the pipeline. These enhancements provide insights into input data quality and final output, ensuring data reliability and usability while maintaining privacy guarantees. All these steps are required to take less than a minute.
 
 ### Pre-encoding Statistics
 
