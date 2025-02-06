@@ -27,7 +27,7 @@ RUN apt-get update && apt-get install -y software-properties-common \
     && apt-get clean
 
 # Install Snakemake
-RUN pip3 install --upgrade pip && pip3 install snakemake==7.30.1
+RUN pip3 install --upgrade pip && pip3 install snakemake==7.30.1 pulp==2.7.0
 
 # Clone and install OpenFHE
 RUN git clone https://github.com/openfheorg/openfhe-development.git /opt/openfhe-development \

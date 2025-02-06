@@ -156,10 +156,10 @@ void Task::bfvBenchmark(PQuantParams &param) {
 
     CCParams<CryptoContextBFVRNS> parameters;
     parameters.SetSecurityLevel(HEStd_128_classic);
-    parameters.SetPlaintextModulus(65537);
+    parameters.SetPlaintextModulus(536903681);
     parameters.SetMultiplicativeDepth(2);
     parameters.SetMaxRelinSkDeg(2);
-    parameters.SetScalingModSize(20);
+    // parameters.SetScalingModSize(20);
 
     CryptoContext<DCRTPoly> cryptoContext = GenCryptoContext(parameters);
     // enable features that you wish to use

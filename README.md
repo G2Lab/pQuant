@@ -62,15 +62,14 @@ This command will test the BFV schemes from the OpenFHE library and output runti
 
 You can use Docker to simplify the setup and run pQuant without manually installing dependencies. Follow these steps:
 
-1. Install docker: install docker for your operating system.
-2.Build the Docker Image
-
+1. Install docker
+Install docker for your operating system.
+2. Build the Docker Image
 The Dockerfile is located in the Docker/ directory. Use the following command to build the Docker image:
 ```bash
     docker build -t pquant:latest -f Docker/Dockerfile .
 ```
 3. Run pQuant Using Docker
-
 After building the image, you can run pQuant inside a Docker container.
 Start the container interactively to test the pQuant commands:
 ```bash
@@ -146,6 +145,93 @@ snakemake -j 256 --config job_id=${job_id} OUT_DIR=${OUT_DIR} \
   --latency-wait 60 --printshellcmds --use-conda
 ```
 
+### Separate Execution of Local and Cloud Tasks
+
+The pQuant pipeline is designed to handle both local and cloud-based tasks within a single Snakemake workflow. However, for users who want to execute these tasks separately, it is important to ensure proper data dependencies and completion flags are met before switching between local and cloud execution. This section explains how to properly execute each subset of rules while maintaining consistency.
+
+0. Before running
+
+Before executing any step, define the output directory (and if you prefer, add job id like example):
+```bash
+OUT_DIR=out
+job_id=$(date +%y%m%d-%H%M%S)
+mkdir -p ${OUT_DIR}/${job_id}
+```
+
+
+1. Running Step 1 (Cloud-Based: Reference Indexing)
+
+The first step involves reference indexing, which prepares the k-mer table from the gene reference file. This step is computationally intensive and should be executed in a cloud environment.
+Command:
+```bash
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step1_generate_kmerTable_cloud
+```
+Prerequisites before moving to local tasks:
+- Ensure that the k-mer table has been generated (OUT_DIR/tmp/step1_done).
+
+
+2. Running Steps 2 and 3 (Local: Key Generation and Encryption)
+
+Once the reference indexing is complete, the next steps involve homomorphic encryption key generation and encoding & encryption. These steps must be executed in a local environment to ensure secure handling of encryption keys.
+
+Command:
+```bash
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step2_he_keygen_local step3_encode_and_encrypt_local
+```
+Prerequisites before moving to cloud tasks:
+- The encrypted k-mers must be available (OUT_DIR/tmp/step3_done).
+
+3. Running Step 4 (Cloud-Based: Secure Evaluation)
+
+This step involves computing the matching between encrypted read k-mers and the reference k-mer table using secure homomorphic encryption operations. Since this is a compute-heavy process, it should be executed in the cloud.
+
+Command:
+```bash
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step4_compute_matching_all_cloud
+```
+Prerequisites before moving to local tasks:
+- Ensure that the secure computation has completed (OUT_DIR/tmp/step4_compute_matching_cloud.txt).
+
+4. Running Step 5 (Local: Decryption and Results Generation)
+
+The final step involves decrypting the computed matches to retrieve gene expression values. This process is executed locally to ensure secure handling of decrypted outputs.
+
+Command:
+```bash
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step5_decrypt_and_return_gene_vector_local
+```
+
+5. Managing File Dependencies Between Local and Cloud Execution
+- If running steps separately across different systems (e.g., cloud and local machines), ensure that required files are properly transferred between environments before execution.
+- The critical job completion flags to check:
+    - Before running Step 2 and Step 3 (local): Ensure OUT_DIR/kmer/{`kmerlist_data.bin`, `kmertable_data.bin`} exists.
+    - Before running Step 4 (cloud): Ensure ciphertexts in OUT_DIR/bfv/ctxtread/{`ctxts`} exists.
+    - Before running Step 5 (local): Ensure ciphertexts in OUT_DIR/bfv/ctxtout/{`ctxts`} exists.
+
+If running in a cloud environment, use shared storage (e.g., S3, Google Cloud Storage, or NFS) to ensure all processes access the correct files.
+
+6. Example Workflows for Separate Execution
+
+```bash
+# Step 0: Define output directory and job ID
+OUT_DIR=out
+job_id=$(date +%y%m%d-%H%M%S)
+mkdir -p ${OUT_DIR}/${job_id}
+
+# Step 1: Run cloud-based reference indexing
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step1_generate_kmerTable_cloud
+
+# Step 2 & 3: Run local-based key generation and encryption
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step2_he_keygen_local step3_encode_and_encrypt_local
+
+# Step 4: Run cloud-based secure evaluation
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step4_compute_matching_all_cloud
+
+# Step 5: Run local-based decryption and final results generation
+snakemake -j <CORES> --config job_id=${job_id} OUT_DIR=${OUT_DIR} step5_decrypt_and_return_gene_vector_local
+```
+
+
 ### Parameters
 
 he key parameters used in the pipeline are:
@@ -188,7 +274,8 @@ To address user requests and improve the usability of pQuant, we have introduced
 
 ### Pre-encoding Statistics
 
-`Note`: seqtk/1.2 must be available and loaded in your environment to enable this feature.
+Following module is required.
+- seqtk: version 1.2
 
 Before the encoding stage, pQuant generates a set of summary statistics from the input RNA-seq reads:
 - Total number of k-mers: The number of k-mers identified in the input dataset.

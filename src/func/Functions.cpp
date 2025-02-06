@@ -440,7 +440,7 @@ void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t 
     }
 
     // seed random number generator
-    srand(time(NULL));
+    srand(42);
 
     for (size_t i = 0; i < num_reads; i++) {
         // choose gene based on gene_prob
@@ -469,11 +469,9 @@ void generateSimulatedReads(vector<Sequence>& gene_seq, size_t read_len, size_t 
             if (read_r < sim_err) {
                 // change base to different base
                 char base = read[j];
-                    cout << "base = " << base << endl;
                 while (base == read[j]) {
                     read[j] = "ACGT"[rand() % 4];
                 }
-                cout << "changed to = " << read[j] << endl;
             }
         }
 
